@@ -1,0 +1,7 @@
+{
+  "name": "piamp-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}

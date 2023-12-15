@@ -1,0 +1,26 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>
+      Devices
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="scanBLE()">
+        <ion-icon slot="icon-only" name="bluetooth"></ion-icon>
+      </ion-button>
+      
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">
+        Devices
+      </ion-title>
+    </ion-toolbar>
+  </ion-header>
+  
+  <iframe title="myIframe" id="my-iframe" #iframeObj></iframe>
+</ion-content>
