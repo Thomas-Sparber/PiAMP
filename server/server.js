@@ -3,6 +3,7 @@ const NodeBleHost = require('ble-host');
 const express = require('express');
 const http = require('http');
 const https = require('https');
+const osc = require("node-osc");
 
 const BleManager = NodeBleHost.BleManager;
 const AdvertisingDataBuilder = NodeBleHost.AdvertisingDataBuilder;
@@ -11,6 +12,9 @@ const AttErrors = NodeBleHost.AttErrors;
 
 const deviceName = 'PiAMP';
 const port = 3600;
+const oscPort = 24024;
+
+var oscClient = new osc.Client("127.0.0.1", oscPort);
 
 var transport = new HciSocket(); // connects to the first hci device on the computer, for example hci0
 
@@ -21,43 +25,15 @@ var options = {
     // optional properties go here
 };
 
-var callbacks = {
-    'help': function(args, callback) {
-        var response = JSON.stringify(Object.keys(callbacks));
-        callback(response);
-    },
-    'uirequest': function(args, callback) {
-        let parsed;
-        try {
-            parsed = JSON.parse(args);
-        } catch (e) {
-            console.log('Unable to parse JSON payload: ', e);
-        }
-
-        const httpsCallback = function(res) {
-            if (res.statusCode !== 200) {
-                console.log("Non success", res);
-                callback("");
-                res.resume();
-                return;
-            }
-
-            let data = '';
-            res.on('data', function(chunk) {
-                data += chunk;
-            });
-
-            res.on('close', function() {
-                callback(data);
-            });
-        }
-
-        if(!parsed.method || parsed.method == "GET") {
-            http.get(parsed.url, httpsCallback);
-        }
+function updateParameter(parameter, value) {
+    if(parseFloat(value) == value) {
+        value = parseFloat(value);
     }
-};
-var currentCallback;
+
+    oscClient.send("/parameter/NeuralPi/" + parameter, value, function() {
+        console.log("OSC value sent");
+    });
+}
 
 BleManager.create(transport, options, function(err, manager) {
     // err is either null or an Error object
@@ -67,6 +43,12 @@ BleManager.create(transport, options, function(err, manager) {
         return;
     }
     
+    var writeHandler = function(parameter, value, callback) {
+        console.log('A new value was written:', value.toString());
+        updateParameter(parameter, value.toString());
+        callback(AttErrors.SUCCESS);
+    }
+    
     var notificationCharacteristic;
     
     manager.gattDb.setDeviceName(deviceName);
@@ -74,22 +56,49 @@ BleManager.create(transport, options, function(err, manager) {
         {
             uuid: '22222222-3333-4444-5555-666666666666',
             characteristics: [
-                {
-                    uuid: '22222222-3333-4444-5555-666666666668',
+                /*{
+                    uuid: '2-3333-4444-5555-60',
                     properties: ['read','write'],
                     onRead: function(connection, callback) {
-                        if(currentCallback && callbacks[currentCallback.split(' ',2)[0]]) {
-                            var splitted = currentCallback.split(' ',2);
-                            callbacks[splitted[0]](splitted[1], function(response) { callback(AttErrors.SUCCESS, response) });
-                        } else {
-                            callback(AttErrors.SUCCESS, "Invalid callback " + currentCallback);
-                        }
+                        callback(AttErrors.SUCCESS, "Currently not implemented");
                     },
-                    onWrite: function(connection, needsResponse, value, callback) {
-                        console.log('A new value was written:', value.toString());
-                        currentCallback = value.toString();
-                        callback(AttErrors.SUCCESS); // actually only needs to be called when needsResponse is true
-                    }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Gain", value, callback); }
+                }, {
+                    uuid: '2-3333-4444-5555-61',
+                    properties: ['read','write'],
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Master", value, callback); }
+                }, {
+                    uuid: '2-3333-4444-5555-62',
+                    properties: ['read','write'],
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Bass", value, callback); }
+                }, {
+                    uuid: '2-3333-4444-5555-63',
+                    properties: ['read','write'],
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Mid", value, callback); }
+                }, {
+                    uuid: '2-3333-4444-5555-64',
+                    properties: ['read','write'],
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Treble", value, callback); }
+                }, {
+                    uuid: '2-3333-4444-5555-65',
+                    properties: ['read','write'],
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Presence", value, callback); }
+                }, {
+                    uuid: '2-3333-4444-5555-66',
+                    properties: ['read','write'],
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Model", value, callback); }
+                }, {
+                    uuid: '2-3333-4444-5555-67',
+                    properties: ['read','write'],
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Ir", value, callback); }
+                }, {
+                    uuid: '2-3333-4444-5555-68',
+                    properties: ['read','write'],
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Reverb", value, callback); }
+                }, */{
+                    uuid: 0x0009,
+                    properties: ['read','write'],
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Delay", value, callback); }
                 }/*,
                 notificationCharacteristic = {
                     uuid: '22222222-3333-4444-5555-66666666666A',
@@ -133,4 +142,4 @@ server.listen(port, function() {
     console.log('Http server started');
 });
 
-app.use(express.static(__dirname + '/www'));
+app.use(express.static(__dirname + '/../ui/single-dist'));
