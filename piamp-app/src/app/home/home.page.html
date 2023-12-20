@@ -22,5 +22,11 @@
     </ion-toolbar>
   </ion-header>
   
-  <iframe title="myIframe" id="my-iframe" #iframeObj></iframe>
+  <ion-range
+    *ngFor="let parameter of parameters"
+    labelPlacement="fixed"
+    [label]="parameter.label"
+    [pin]="true"
+    [(ngModel)]="parameter.value"
+    (ionChange)="onValueChanged($event, parameter)"></ion-range>
 </ion-content>
