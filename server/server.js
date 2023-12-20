@@ -56,46 +56,46 @@ BleManager.create(transport, options, function(err, manager) {
         {
             uuid: '22222222-3333-4444-5555-666666666666',
             characteristics: [
-                /*{
-                    uuid: '2-3333-4444-5555-60',
+                {
+                    uuid: 0x0000,
                     properties: ['read','write'],
                     onRead: function(connection, callback) {
                         callback(AttErrors.SUCCESS, "Currently not implemented");
                     },
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Gain", value, callback); }
                 }, {
-                    uuid: '2-3333-4444-5555-61',
+                    uuid: 0x0001,
                     properties: ['read','write'],
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Master", value, callback); }
                 }, {
-                    uuid: '2-3333-4444-5555-62',
+                    uuid: 0x0002,
                     properties: ['read','write'],
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Bass", value, callback); }
                 }, {
-                    uuid: '2-3333-4444-5555-63',
+                    uuid: 0x0003,
                     properties: ['read','write'],
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Mid", value, callback); }
                 }, {
-                    uuid: '2-3333-4444-5555-64',
+                    uuid: 0x0004,
                     properties: ['read','write'],
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Treble", value, callback); }
                 }, {
-                    uuid: '2-3333-4444-5555-65',
+                    uuid: 0x0005,
                     properties: ['read','write'],
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Presence", value, callback); }
                 }, {
-                    uuid: '2-3333-4444-5555-66',
+                    uuid: 0x0006,
                     properties: ['read','write'],
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Model", value, callback); }
                 }, {
-                    uuid: '2-3333-4444-5555-67',
+                    uuid: 0x0007,
                     properties: ['read','write'],
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Ir", value, callback); }
                 }, {
-                    uuid: '2-3333-4444-5555-68',
+                    uuid: 0x0008,
                     properties: ['read','write'],
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Reverb", value, callback); }
-                }, */{
+                }, {
                     uuid: 0x0009,
                     properties: ['read','write'],
                     onWrite: function(connection, needsResponse, value, callback) { writeHandler("Delay", value, callback); }
