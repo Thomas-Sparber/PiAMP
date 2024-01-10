@@ -6,7 +6,6 @@ const https = require('https');
 const osc = require("node-osc");
 const fs = require('fs');
 const path = require('path');
-const bodyParser = require('body-parser')
 
 const BleManager = NodeBleHost.BleManager;
 const AdvertisingDataBuilder = NodeBleHost.AdvertisingDataBuilder;
@@ -175,14 +174,16 @@ server.listen(port, function() {
     console.log('Http server started on port ' + port);
 });
 
+app.use(express.json());
+
 app.get("/api/version", function(req, res) {
     res.send(JSON.stringify(version));
 });
 
 app.post("/api/parameter/:parameter", function(req, res) {
     const parameter = req.params.parameter;
-    const value = req.body;
-    console.log("Http new value for parameter " + parameter + ": value");
+    const value = req.body.value;
+    console.log("Http new value for parameter " + parameter + ": ", req.body);
     updateParameter(parameter, value);
     res.send("OK");
 });
@@ -206,5 +207,3 @@ app.use(express.static(__dirname + '/../piamp-app/www/'));
 app.get("*", function(req, res) {
     res.sendFile(path.join(__dirname + '/../piamp-app/www/index.html'));
 });
-
-app.use(bodyParser.json());
