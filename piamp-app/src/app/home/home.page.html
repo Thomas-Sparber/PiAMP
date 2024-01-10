@@ -32,7 +32,7 @@
       (ionChange)="onValueChanged($event, parameter)"></ion-range>
 
       <ion-select
-        *ngIf="parameter.type === 'slider'"
+        *ngIf="parameter.type === 'dropdown'"
         [label]="parameter.label" placeholder="Please select">
 
         <ion-select-option

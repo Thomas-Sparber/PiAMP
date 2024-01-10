@@ -22,7 +22,12 @@ export class AppComponent {
     await this.platform.ready();
 
     console.log("Platform ready");
-    await BleClient.initialize(/*{ androidNeverForLocation: true }*/);
+
+    try {
+      await BleClient.initialize(/*{ androidNeverForLocation: true }*/);
+    } catch(e) {
+      console.log("Bluetooth not available");
+    }
   }
   
 }
