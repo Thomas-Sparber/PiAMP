@@ -4,12 +4,12 @@
       Devices
     </ion-title>
 
-    <ion-buttons slot="end">
+    <ion-buttons slot="end" *ngIf="(isHTTPBackend | async) === false">
       <ion-button fill="clear" (click)="scanBLE()">
         <ion-icon slot="icon-only" name="bluetooth"></ion-icon>
       </ion-button>
-      
     </ion-buttons>
+
   </ion-toolbar>
 </ion-header>
 
@@ -22,11 +22,27 @@
     </ion-toolbar>
   </ion-header>
   
-  <ion-range
-    *ngFor="let parameter of parameters"
-    labelPlacement="fixed"
-    [label]="parameter.label"
-    [pin]="true"
-    [(ngModel)]="parameter.value"
-    (ionChange)="onValueChanged($event, parameter)"></ion-range>
+  <ng-container *ngFor="let parameter of parameters">
+    <ion-range
+      *ngIf="parameter.type === 'slider'"
+      labelPlacement="fixed"
+      [label]="parameter.label"
+      [pin]="true"
+      [(ngModel)]="parameter.value"
+      (ionChange)="onValueChanged($event, parameter)"></ion-range>
+
+      <ion-select
+        *ngIf="parameter.type === 'slider'"
+        [label]="parameter.label" placeholder="Please select">
+
+        <ion-select-option
+          *ngFor="let option of listValues[parameter.id] | async"
+          [(ngModel)]="parameter.value"
+          (ionChange)="onValueChanged($event, parameter)">
+          
+          {{ option.name }}
+        </ion-select-option>
+      </ion-select>
+  </ng-container>
+  
 </ion-content>

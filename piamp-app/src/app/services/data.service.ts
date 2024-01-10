@@ -1,83 +1,137 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-
-export interface Message {
-  fromName: string;
-  subject: string;
-  date: string;
-  id: number;
-  read: boolean;
-}
+import { BleClient, BleDevice, numberToUUID } from '@capacitor-community/bluetooth-le';
+import { catchError, first, lastValueFrom, of } from 'rxjs';
+import { IdName } from '../models/id.name';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DataService {
-  public messages: Message[] = [
-    {
-      fromName: 'Matt Chorsey',
-      subject: 'New event: Trip to Vegas',
-      date: '9:32 AM',
-      id: 0,
-      read: false
-    },
-    {
-      fromName: 'Lauren Ruthford',
-      subject: 'Long time no chat',
-      date: '6:12 AM',
-      id: 1,
-      read: false
-    },
-    {
-      fromName: 'Jordan Firth',
-      subject: 'Report Results',
-      date: '4:55 AM',
-      id: 2,
-      read: false
-    },
-    {
-      fromName: 'Bill Thomas',
-      subject: 'The situation',
-      date: 'Yesterday',
-      id: 3,
-      read: false
-    },
-    {
-      fromName: 'Joanne Pollan',
-      subject: 'Updated invitation: Swim lessons',
-      date: 'Yesterday',
-      id: 4,
-      read: false
-    },
-    {
-      fromName: 'Andrea Cornerston',
-      subject: 'Last minute ask',
-      date: 'Yesterday',
-      id: 5,
-      read: false
-    },
-    {
-      fromName: 'Moe Chamont',
-      subject: 'Family Calendar - Version 1',
-      date: 'Last Week',
-      id: 6,
-      read: false
-    },
-    {
-      fromName: 'Kelly Richardson',
-      subject: 'Placeholder Headhots',
-      date: 'Last Week',
-      id: 7,
-      read: false
+
+  serviceUUID = "22222222-3333-4444-5555-666666666666";
+  connectedDevice?: BleDevice;
+  encoder = new TextEncoder();
+  decoder = new TextDecoder();
+  httpBackend?: Promise<boolean>;
+
+  parameterCharacteristics: { [key: string]: number } = {
+    Gain: 0x0000,
+    Master: 0x0001,
+    Bass: 0x0002,
+    Mid: 0x0003,
+    Treble: 0x0004,
+    Presence: 0x0005,
+    Model: 0x0006,
+    Ir: 0x0007,
+    Deplay: 0x0008,
+    Reverb: 0x0009
+  };
+
+  listCharacteristics: { [key: string]: number } = {
+    Ir: 0x000A,
+    Model: 0x000b
+  }
+
+  constructor(
+    private http: HttpClient
+  ) { }
+
+  isHTTPBackend() {
+    if(!this.httpBackend) {
+      this.httpBackend = new Promise<boolean>((resolve, reject) => {
+        this.http.get("/api/version")
+          .pipe(first())
+          .pipe(catchError(err => {
+            return of(false);
+          }))
+          .subscribe(result => {
+            console.log("Check is http backend: ", result);
+            resolve(result !== false);
+          });
+      });
     }
-  ];
 
-  constructor() { }
-
-  public getMessages(): Message[] {
-    return this.messages;
+    return this.httpBackend;
   }
 
-  public getMessageById(id: number): Message {
-    return this.messages[id];
+  async scanBLEAndConnect() {
+    let device: BleDevice;
+    try {
+      device = await BleClient.requestDevice({ services: [ this.serviceUUID ] });
+    } catch (e) {
+      console.log("Unable to get device ", e);
+      return;
+    }
+
+    let connected = false;
+    for(let i = 0; i < 5; i++) {
+      try {
+        await BleClient.connect(device.deviceId, (deviceId) => {
+          console.log("Disconnected");
+          this.connectedDevice = undefined;
+        });
+        connected = true;
+        break;
+      } catch (e) {
+        console.log("Connection problem retrying...");
+      }
+    }
+
+    if(!connected) {
+      return;
+    }
+
+    console.log("Connected");
+    this.connectedDevice = device;
   }
+
+  async sendParameterValue(parameterId: string, value: string) {
+    const http = await this.isHTTPBackend();
+
+    if(http) {
+      return this.sendRESTParameterValue(parameterId, value);
+    } else {
+      return this.sendBLEParameterValue(parameterId, value);
+    }
+  }
+
+  async sendBLEParameterValue(parameterId: string, value: string) {
+    const dv = new DataView(this.encoder.encode(value).buffer);
+    const characteristics = this.parameterCharacteristics[parameterId];
+    if(!characteristics)console.log("No characteristics found for parameter id " + parameterId, this.parameterCharacteristics);
+    await BleClient.write(this.connectedDevice!.deviceId, this.serviceUUID, numberToUUID(characteristics), dv);
+  }
+
+  async sendRESTParameterValue(parameterId: string, value: string) {
+    return lastValueFrom(this.http.post("/api/parameter/" + parameterId, value));
+  }
+
+  async getListData(parameterId: string) {
+    const http = await this.isHTTPBackend();
+
+    if(http) {
+      return this.getRESTListData(parameterId);
+    } else {
+      return this.getBLEListData(parameterId);
+    }
+  }
+
+  async getBLEListData(parameterId: string) {
+    const characteristics = this.parameterCharacteristics[parameterId];
+    if(!characteristics)console.log("No characteristics found for parameter id " + parameterId, this.parameterCharacteristics);
+
+    let result = "";
+    do {
+      const r = await BleClient.read(this.connectedDevice!.deviceId, this.serviceUUID, numberToUUID(characteristics));
+      result = result + r;
+    } while(!result.endsWith("\n"));
+
+    return JSON.parse(result) as IdName[];
+  }
+
+  async getRESTListData(parameterId: string) {
+    return lastValueFrom(this.http.get<IdName[]>("/api/parameter/list/" + parameterId));
+  }
+  
 }

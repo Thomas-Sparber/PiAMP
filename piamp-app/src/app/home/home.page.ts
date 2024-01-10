@@ -1,6 +1,7 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component } from '@angular/core';
 import { Platform } from '@ionic/angular';
-import { BleClient, BleDevice, numberToUUID } from '@capacitor-community/bluetooth-le';
+import { DataService } from '../services/data.service';
+import { IdName } from '../models/id.name';
 
 interface UIRequest {
   method?: "GET" | "POST";
@@ -9,9 +10,10 @@ interface UIRequest {
 }
 
 interface Parameter {
+  id: string;
   label: string;
   value: number;
-  characteristics: number;
+  type: "slider" | "dropdown"
 }
 
 @Component({
@@ -21,99 +23,79 @@ interface Parameter {
 })
 export class HomePage {
   
-  connectedDevice?: BleDevice;
-  serviceUUID = "22222222-3333-4444-5555-666666666666";
-  encoder = new TextEncoder();
-  decoder = new TextDecoder();
   parameters: Parameter[] = [{
+    id: "Gain",
     label: "Gain",
     value: 0,
-    characteristics: 0x0000,
+    type: "slider"
   }, {
+    id: "Master",
     label: "Master",
     value: 0,
-    characteristics: 0x0001
+    type: "slider"
   }, {
+    id: "Bass",
     label: "Bass",
     value: 0,
-    characteristics: 0x0002
+    type: "slider"
   }, {
+    id: "Mid",
     label: "Mid",
     value: 0,
-    characteristics: 0x0003
+    type: "slider"
   }, {
+    id: "Treble",
     label: "Treble",
     value: 0,
-    characteristics: 0x0004
+    type: "slider"
   }, {
+    id: "Presence",
     label: "Presence",
     value: 0,
-    characteristics: 0x0005
+    type: "slider"
   }, {
+    id: "Model",
     label: "Model",
     value: 0,
-    characteristics: 0x0006
+    type: "dropdown"
   }, {
+    id: "Ir",
     label: "Ir",
     value: 0,
-    characteristics: 0x0007
+    type: "dropdown"
   }, {
+    id: "Reverb",
     label: "Reverb",
     value: 0,
-    characteristics: 0x0008
+    type: "slider"
   }, {
+    id: "Delay",
     label: "Delay",
     value: 0,
-    characteristics: 0x0009
+    type: "slider"
   }];
 
+  listValues: { [key: string]: Promise<IdName[]> } = {
+    Model: this.data.getListData("Model"),
+    Ir: this.data.getListData("Ir")
+  };
+
+  isHTTPBackend: Promise<boolean>;
+
   constructor(
-    private platform: Platform
+    private platform: Platform,
+    private data: DataService
   ) {
+    this.isHTTPBackend = data.isHTTPBackend();
   }
 
   async scanBLE() {
-    let device: BleDevice;
-    try {
-      device = await BleClient.requestDevice({ services: [ this.serviceUUID ] });
-    } catch (e) {
-      console.log("Unable to get device ", e);
-      return;
-    }
-
-    let connected = false;
-    for(let i = 0; i < 5; i++) {
-      try {
-        await BleClient.connect(device.deviceId, (deviceId) => {
-          console.log("Disconnected");
-          this.connectedDevice = undefined;
-        });
-        connected = true;
-        break;
-      } catch (e) {
-        console.log("Connection problem retrying...");
-      }
-    }
-
-    if(!connected) {
-      return;
-    }
-
-    console.log("Connected");
-    this.connectedDevice = device;
+    this.data.scanBLEAndConnect();
   }
 
-  onValueChanged(ev: Event, parameter: Parameter) {
+  async onValueChanged(ev: Event, parameter: Parameter) {
     const stringValue = "" + (parameter.value / 100);
-    const dv = new DataView(this.encoder.encode(stringValue).buffer);
-    BleClient.write(this.connectedDevice!.deviceId, this.serviceUUID, numberToUUID(parameter.characteristics), dv);
-  }
-
-  async bleUIRequest(r: UIRequest) {
-    const dv = new DataView(this.encoder.encode("uirequest " + JSON.stringify(r)).buffer);
-    //await BleClient.write(this.connectedDevice!.deviceId, this.serviceUUID, this.characteristicsUUID, dv);
-    //const response = await BleClient.read(this.connectedDevice!.deviceId, this.serviceUUID, this.characteristicsUUID);
-    //return this.decoder.decode(response);
+    await this.data.sendParameterValue(parameter.id, stringValue);
   }
 
 }
