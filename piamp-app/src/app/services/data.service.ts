@@ -43,6 +43,7 @@ export class DataService {
         this.http.get("/api/version")
           .pipe(first())
           .pipe(catchError(err => {
+            console.log("Error reading http rest version");
             return of(false);
           }))
           .subscribe(result => {
