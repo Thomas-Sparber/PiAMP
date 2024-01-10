@@ -105,7 +105,7 @@ export class DataService {
   }
 
   async sendRESTParameterValue(parameterId: string, value: string) {
-    return lastValueFrom(this.http.post("/api/parameter/" + parameterId, value));
+    return lastValueFrom(this.http.post("/api/parameter/" + parameterId, { value: value }));
   }
 
   async getListData(parameterId: string) {
