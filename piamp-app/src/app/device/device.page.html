@@ -1,0 +1,42 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>
+      {{ deviceName | async }}
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">
+        {{ deviceName | async }}
+      </ion-title>
+    </ion-toolbar>
+  </ion-header>
+  
+  <ng-container *ngFor="let parameter of parameters">
+    <ion-range
+      *ngIf="parameter.type === 'slider'"
+      labelPlacement="fixed"
+      [label]="parameter.label"
+      [pin]="true"
+      [(ngModel)]="parameter.value"
+      (ionChange)="onValueChanged($event, parameter)"></ion-range>
+
+      <ion-select
+        *ngIf="parameter.type === 'dropdown'"
+        [label]="parameter.label" placeholder="Please select"
+        [(ngModel)]="parameter.value"
+        (ionChange)="onValueChanged($event, parameter)">
+
+        <ion-select-option
+          *ngFor="let option of listValues[parameter.id] | async"
+          [value]="option.id">
+          
+          {{ option.name }}
+        </ion-select-option>
+      </ion-select>
+  </ng-container>
+  
+</ion-content>

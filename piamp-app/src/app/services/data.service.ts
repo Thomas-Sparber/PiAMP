@@ -1,8 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BleClient, BleDevice, numberToUUID } from '@capacitor-community/bluetooth-le';
-import { catchError, first, lastValueFrom, of } from 'rxjs';
+import { catchError, first, lastValueFrom, map, of } from 'rxjs';
 import { IdName } from '../models/id.name';
+import { AlertController } from '@ionic/angular';
+
+interface Value {
+  value: string | number | undefined;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +39,8 @@ export class DataService {
   }
 
   constructor(
-    private http: HttpClient
+    private http: HttpClient,
+    private alertController: AlertController
   ) { }
 
   isHTTPBackend() {
@@ -43,7 +49,6 @@ export class DataService {
         this.http.get("/api/version")
           .pipe(first())
           .pipe(catchError(err => {
-            console.log("Error reading http rest version");
             return of(false);
           }))
           .subscribe(result => {
@@ -56,21 +61,42 @@ export class DataService {
     return this.httpBackend;
   }
 
-  async scanBLEAndConnect() {
-    let device: BleDevice;
-    try {
-      device = await BleClient.requestDevice({ services: [ this.serviceUUID ] });
-    } catch (e) {
-      console.log("Unable to get device ", e);
-      return;
-    }
+  async isConnected() {
+    const http = await this.isHTTPBackend();
+    if(http)return true;
+    return (this.connectedDevice != undefined);
+  }
 
+  async getDeviceName() {
+    const http = await this.isHTTPBackend();
+
+    if(http) {
+      return lastValueFrom(this.http.get<string>("/api/name"));
+    } else {
+      return this.connectedDevice?.name!;
+    }
+  }
+
+  async scanBLEAndConnect() {
+    let device = await BleClient.requestDevice({ services: [ this.serviceUUID ] });
+    return this.connect(device);
+  }
+
+  async connect(device: BleDevice) {
     let connected = false;
     for(let i = 0; i < 5; i++) {
       try {
-        await BleClient.connect(device.deviceId, (deviceId) => {
+        await BleClient.connect(device.deviceId, async (deviceId) => {
           console.log("Disconnected");
           this.connectedDevice = undefined;
+
+          const alert = await this.alertController.create({
+            header: 'Device disconnected',
+            message: device.name + ' disconnected. Please check device',
+            buttons: ['OK'],
+          });
+      
+          await alert.present();
         });
         connected = true;
         break;
@@ -80,7 +106,15 @@ export class DataService {
     }
 
     if(!connected) {
-      return;
+      const alert = await this.alertController.create({
+        header: 'Unable to connect',
+        message: "Unable to connect " + device.name + ' after 5 attempts',
+        buttons: ['OK'],
+      });
+  
+      await alert.present();
+
+      throw "Unable to connect after 5 attempts";
     }
 
     console.log("Connected");
@@ -108,6 +142,27 @@ export class DataService {
     return lastValueFrom(this.http.post("/api/parameter/" + parameterId, { value: value }));
   }
 
+  async readParameterValue(parameterId: string) {
+    const http = await this.isHTTPBackend();
+
+    if(http) {
+      return this.readRESTParameterValue(parameterId);
+    } else {
+      return this.readBLEParameterValue(parameterId);
+    }
+  }
+
+  async readBLEParameterValue(parameterId: string) {
+    const characteristics = this.parameterCharacteristics[parameterId];
+    if(!characteristics)console.log("No characteristics found for parameter id " + parameterId, this.parameterCharacteristics);
+    const dv = await BleClient.read(this.connectedDevice!.deviceId, this.serviceUUID, numberToUUID(characteristics));
+    return this.decoder.decode(dv);
+  }
+
+  async readRESTParameterValue(parameterId: string) {
+    return lastValueFrom(this.http.get<Value>("/api/parameter/" + parameterId).pipe(map(v => v.value)));
+  }
+
   async getListData(parameterId: string) {
     const http = await this.isHTTPBackend();
 
@@ -124,8 +179,8 @@ export class DataService {
 
     let result = "";
     do {
-      const r = await BleClient.read(this.connectedDevice!.deviceId, this.serviceUUID, numberToUUID(characteristics));
-      result = result + r;
+      const dv = await BleClient.read(this.connectedDevice!.deviceId, this.serviceUUID, numberToUUID(characteristics));
+      result = result + this.decoder.decode(dv);
     } while(!result.endsWith("\n"));
 
     return JSON.parse(result) as IdName[];

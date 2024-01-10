@@ -1,14 +1,18 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
+import { HomeGuard } from './guards/home.guard';
+import { DeviceGuard } from './guards/device.guard';
 
 const routes: Routes = [
   {
     path: 'home',
-    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
+    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule),
+    canActivate: [HomeGuard()]
   },
   {
-    path: 'message/:id',
-    loadChildren: () => import('./view-message/view-message.module').then( m => m.ViewMessagePageModule)
+    path: 'device',
+    loadChildren: () => import('./device/device.module').then( m => m.DevicePageModule),
+    canActivate: [DeviceGuard()]
   },
   {
     path: '',
