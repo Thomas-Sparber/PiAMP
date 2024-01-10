@@ -80,8 +80,18 @@ BleManager.create(transport, options, function(err, manager) {
         updateParameter(parameter, value.toString());
         callback(AttErrors.SUCCESS);
     }
+
+    var readHandler = function(parameter, callback) {
+        const result = {
+            value: parameters[parameter]
+        };
+
+        callback(AttErrors.SUCCESS, JSON.stringify(result));
+    }
     
     var notificationCharacteristic;
+
+    var writeCache = {};
     
     manager.gattDb.setDeviceName(deviceName);
     manager.gattDb.addServices([
@@ -94,43 +104,93 @@ BleManager.create(transport, options, function(err, manager) {
                     onRead: function(connection, callback) {
                         callback(AttErrors.SUCCESS, "Currently not implemented");
                     },
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Gain", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Gain", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Gain", callback); }
                 }, {
                     uuid: 0x0001,
                     properties: ['read','write'],
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Master", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Master", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Master", callback); }
                 }, {
                     uuid: 0x0002,
                     properties: ['read','write'],
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Bass", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Bass", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Bass", callback); }
                 }, {
                     uuid: 0x0003,
                     properties: ['read','write'],
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Mid", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Mid", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Mid", callback); }
                 }, {
                     uuid: 0x0004,
                     properties: ['read','write'],
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Treble", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Treble", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Treble", callback); }
                 }, {
                     uuid: 0x0005,
                     properties: ['read','write'],
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Presence", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Presence", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Presence", callback); }
                 }, {
                     uuid: 0x0006,
                     properties: ['read','write'],
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Model", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Model", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Model", callback); }
                 }, {
                     uuid: 0x0007,
                     properties: ['read','write'],
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Ir", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Ir", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Ir", callback); }
                 }, {
                     uuid: 0x0008,
                     properties: ['read','write'],
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Reverb", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Reverb", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Reverb", callback); }
                 }, {
                     uuid: 0x0009,
                     properties: ['read','write'],
-                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Delay", value, callback); }
+                    onWrite: function(connection, needsResponse, value, callback) { writeHandler("Delay", value, callback); },
+                    onRead: function(connection, callback) { readHandler("Delay", callback); }
+                }, {
+                    uuid: 0x000A,
+                    properties: ['read'],
+                    onRead: function(connection, callback) {
+                        if(!writeCache["Ir"]) {
+                            const result = getIrs();
+                            writeCache["Ir"] = JSON.stringify(result) + "\n";
+                        }
+
+                        let sent = false;
+                        let divide = 1;
+                        while(!sent) {
+                            const temp = writeCache["Ir"].substring(0, writeCache["Ir"].length / divide);
+                            try {
+                                callback(AttErrors.SUCCESS, temp);
+                                sent = true;
+                                writeCache["Ir"] = writeCache["Ir"].substring(writeCache["Ir"].length / divide);
+                            } catch(e) {}
+                        }
+                    }
+                }, {
+                    uuid: 0x000B,
+                    properties: ['read'],
+                    onRead: function(connection, callback) {
+                        if(!writeCache["Model"]) {
+                            const result = getModels();
+                            writeCache["Model"] = JSON.stringify(result) + "\n";
+                        }
+
+                        let sent = false;
+                        let divide = 1;
+                        while(!sent) {
+                            const temp = writeCache["Model"].substring(0, writeCache["Model"].length / divide);
+                            try {
+                                callback(AttErrors.SUCCESS, temp);
+                                sent = true;
+                                writeCache["Model"] = writeCache["Model"].substring(writeCache["Model"].length / divide);
+                            } catch(e) {}
+                        }
+                    }
                 }/*,
                 notificationCharacteristic = {
                     uuid: '22222222-3333-4444-5555-66666666666A',
@@ -180,12 +240,24 @@ app.get("/api/version", function(req, res) {
     res.send(JSON.stringify(version));
 });
 
+app.get("/api/version", function(req, res) {
+    res.send(JSON.stringify(deviceName));
+});
+
 app.post("/api/parameter/:parameter", function(req, res) {
     const parameter = req.params.parameter;
     const value = req.body.value;
     console.log("Http new value for parameter " + parameter + ": ", req.body);
     updateParameter(parameter, value);
     res.send("OK");
+});
+
+app.get("/api/parameter/:parameter", function(req, res) {
+    const parameter = req.params.parameter;
+    const result = {
+        value: parameters[parameter]
+    };
+    res.send(result);
 });
 
 app.get("/api/parameter/list/:parameter", function(req, res) {
