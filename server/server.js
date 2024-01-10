@@ -5,7 +5,8 @@ const http = require('http');
 const https = require('https');
 const osc = require("node-osc");
 const fs = require('fs');
-const p = require('Path');
+const path = require('path');
+const bodyParser = require('body-parser')
 
 const BleManager = NodeBleHost.BleManager;
 const AdvertisingDataBuilder = NodeBleHost.AdvertisingDataBuilder;
@@ -17,7 +18,7 @@ const port = 3600;
 const oscPort = 24024;
 const version = "1.0.0";
 const irsFolder = "/home/mind/Documents/GuitarML/NeuralPi/irs";
-const tonesFolder = "/home/mind/Documents/GuitarML/NeuralPi/tones";
+const modelsFolder = "/home/mind/Documents/GuitarML/NeuralPi/tones";
 
 var oscClient = new osc.Client("127.0.0.1", oscPort);
 
@@ -47,9 +48,21 @@ function getIrs() {
     const result = [];
 
     fs.readdirSync(irsFolder).forEach(file => {
-        const content = fs.readFileSync(irsFolder + "/" + file);
+        const name = path.parse(irsFolder + "/" + file).name
+        result.push({ id: name, name: name });
+    });
+
+    return result;
+}
+
+function getModels() {
+    const result = [];
+
+    fs.readdirSync(modelsFolder).forEach(file => {
+        const content = fs.readFileSync(modelsFolder + "/" + file);
         const parsed = JSON.parse(content);
-        result.push({ id: p.Path.parse(irsFolder + "/" + file).name, name: parsed.name });
+        const id = path.parse(modelsFolder + "/" + file).name;
+        result.push({ id: id, name: parsed.name || id });
     });
 
     return result;
@@ -159,19 +172,33 @@ BleManager.create(transport, options, function(err, manager) {
 });
 
 server.listen(port, function() {
-    console.log('Http server started');
+    console.log('Http server started on port ' + port);
 });
 
-app.get("api/version", function(req, res) {
-    res.send(version);
+app.get("/api/version", function(req, res) {
+    res.send(JSON.stringify(version));
 });
 
-app.post("api/parameter/:parameter", function(req, res) {
+app.post("/api/parameter/:parameter", function(req, res) {
     const parameter = req.params.parameter;
     const value = req.body;
     console.log("Http new value for parameter " + parameter + ": value");
     updateParameter(parameter, value);
     res.send("OK");
+});
+
+app.get("/api/parameter/list/:parameter", function(req, res) {
+    const parameter = req.params.parameter;
+
+    if(parameter == "Ir") {
+        const result = getIrs();
+        res.send(result);
+    }
+
+    if(parameter == "Model") {
+        const result = getModels();
+        res.send(result);
+    }
 });
 
 app.use(express.static(__dirname + '/../piamp-app/www/'));
