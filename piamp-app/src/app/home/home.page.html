@@ -33,12 +33,13 @@
 
       <ion-select
         *ngIf="parameter.type === 'dropdown'"
-        [label]="parameter.label" placeholder="Please select">
+        [label]="parameter.label" placeholder="Please select"
+        [(ngModel)]="parameter.value"
+        (ionChange)="onValueChanged($event, parameter)">
 
         <ion-select-option
           *ngFor="let option of listValues[parameter.id] | async"
-          [(ngModel)]="parameter.value"
-          (ionChange)="onValueChanged($event, parameter)">
+          [value]="option.id">
           
           {{ option.name }}
         </ion-select-option>
