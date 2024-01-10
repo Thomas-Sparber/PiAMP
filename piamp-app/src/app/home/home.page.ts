@@ -12,7 +12,7 @@ interface UIRequest {
 interface Parameter {
   id: string;
   label: string;
-  value: number;
+  value: number | string;
   type: "slider" | "dropdown"
 }
 
@@ -94,7 +94,12 @@ export class HomePage {
   }
 
   async onValueChanged(ev: Event, parameter: Parameter) {
-    const stringValue = "" + (parameter.value / 100);
+    let stringValue;
+    if(isNaN(parameter.value as number)) {
+      stringValue = "" + parameter.value;
+    } else {
+      stringValue = "" + (parameter.value as number / 100);
+    }
     await this.data.sendParameterValue(parameter.id, stringValue);
   }
 
