@@ -4,6 +4,8 @@ const express = require('express');
 const http = require('http');
 const https = require('https');
 const osc = require("node-osc");
+const fs = require('fs');
+const p = require('Path');
 
 const BleManager = NodeBleHost.BleManager;
 const AdvertisingDataBuilder = NodeBleHost.AdvertisingDataBuilder;
@@ -13,6 +15,9 @@ const AttErrors = NodeBleHost.AttErrors;
 const deviceName = 'PiAMP';
 const port = 3600;
 const oscPort = 24024;
+const version = "1.0.0";
+const irsFolder = "/home/mind/Documents/GuitarML/NeuralPi/irs";
+const tonesFolder = "/home/mind/Documents/GuitarML/NeuralPi/tones";
 
 var oscClient = new osc.Client("127.0.0.1", oscPort);
 
@@ -25,6 +30,8 @@ var options = {
     // optional properties go here
 };
 
+var parameters = {};
+
 function updateParameter(parameter, value) {
     if(parseFloat(value) == value) {
         value = parseFloat(value);
@@ -32,7 +39,20 @@ function updateParameter(parameter, value) {
 
     oscClient.send("/parameter/NeuralPi/" + parameter, value, function() {
         console.log("OSC value sent");
+        parameters[parameter] = value;
     });
+}
+
+function getIrs() {
+    const result = [];
+
+    fs.readdirSync(irsFolder).forEach(file => {
+        const content = fs.readFileSync(irsFolder + "/" + file);
+        const parsed = JSON.parse(content);
+        result.push({ id: p.Path.parse(irsFolder + "/" + file).name, name: parsed.name });
+    });
+
+    return result;
 }
 
 BleManager.create(transport, options, function(err, manager) {
@@ -44,7 +64,7 @@ BleManager.create(transport, options, function(err, manager) {
     }
     
     var writeHandler = function(parameter, value, callback) {
-        console.log('A new value was written:', value.toString());
+        console.log('A new value for ' + parameter + ' was written:', value.toString());
         updateParameter(parameter, value.toString());
         callback(AttErrors.SUCCESS);
     }
@@ -142,4 +162,22 @@ server.listen(port, function() {
     console.log('Http server started');
 });
 
-app.use(express.static(__dirname + '/../ui/single-dist'));
+app.get("api/version", function(req, res) {
+    res.send(version);
+});
+
+app.post("api/parameter/:parameter", function(req, res) {
+    const parameter = req.params.parameter;
+    const value = req.body;
+    console.log("Http new value for parameter " + parameter + ": value");
+    updateParameter(parameter, value);
+    res.send("OK");
+});
+
+app.use(express.static(__dirname + '/../piamp-app/www/'));
+
+app.get("*", function(req, res) {
+    res.sendFile(path.join(__dirname + '/../piamp-app/www/index.html'));
+});
+
+app.use(bodyParser.json());
