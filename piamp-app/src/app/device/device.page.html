@@ -18,10 +18,11 @@
   <ng-container *ngFor="let parameter of parameters">
     <ion-range
       *ngIf="parameter.type === 'slider'"
+      [value]="parameter.value"
       labelPlacement="fixed"
       [label]="parameter.label"
-      [pin]="true"
       [(ngModel)]="parameter.value"
+      [pin]="true"
       (ionChange)="onValueChanged($event, parameter)"></ion-range>
 
       <ion-select

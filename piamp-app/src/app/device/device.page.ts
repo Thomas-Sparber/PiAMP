@@ -50,7 +50,11 @@ export class DevicePage implements OnInit {
     for(let i = 0; i < this.parameters.length; i++) {
       const v = await this.data.readParameterValue(this.parameters[i].id);
       if(v !== undefined) {
-        this.parameters[i].value = v;
+        if(!isNaN(v as number)) {
+          this.parameters[i].value = (v as number) * 100;
+        } else {
+          this.parameters[i].value = v;
+        }
       }
     }
   }
