@@ -240,7 +240,7 @@ app.get("/api/version", function(req, res) {
     res.send(JSON.stringify(version));
 });
 
-app.get("/api/version", function(req, res) {
+app.get("/api/name", function(req, res) {
     res.send(JSON.stringify(deviceName));
 });
 
@@ -249,7 +249,7 @@ app.post("/api/parameter/:parameter", function(req, res) {
     const value = req.body.value;
     console.log("Http new value for parameter " + parameter + ": ", req.body);
     updateParameter(parameter, value);
-    res.send("OK");
+    res.send(JSON.stringify("OK"));
 });
 
 app.get("/api/parameter/:parameter", function(req, res) {
