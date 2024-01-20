@@ -29,13 +29,15 @@ export class DataService {
     Presence: 0x0005,
     Model: 0x0006,
     Ir: 0x0007,
-    Deplay: 0x0008,
-    Reverb: 0x0009
+    Delay: 0x0008,
+    Reverb: 0x0009,
+    Chorus: 0x000C,
+    Flanger: 0x000D
   };
 
   listCharacteristics: { [key: string]: number } = {
     Ir: 0x000A,
-    Model: 0x000b
+    Model: 0x000B
   }
 
   constructor(

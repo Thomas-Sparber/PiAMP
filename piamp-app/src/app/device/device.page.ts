@@ -27,7 +27,9 @@ export class DevicePage implements OnInit {
     { id: "Model",    label: "Model",    value: "", type: "dropdown" },
     { id: "Ir",       label: "Ir",       value: "", type: "dropdown" },
     { id: "Reverb",   label: "Reverb",   value: 0,  type: "slider"   },
-    { id: "Delay",    label: "Delay",    value: 0,  type: "slider"   }
+    { id: "Delay",    label: "Delay",    value: 0,  type: "slider"   },
+    { id: "Chorus",   label: "Chorus",   value: 0,  type: "slider"   },
+    { id: "Flanger",  label: "Flanger",  value: 0,  type: "slider"   }
   ];
 
   listValues: { [key: string]: Promise<IdName[]> } = {
