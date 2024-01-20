@@ -42,7 +42,7 @@ Channel channels[] = {
   Channel(
     "FX2",  //name
     2,      //switchPin
-    1,      //ledPin
+    5,      //ledPin
     false,  //hasSubChannel
     true    //isFxChannel
   )
@@ -68,7 +68,7 @@ String lastSentCommand;
 String currentCommand;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
 
   for(int i = 0; i < channelsCount; ++i) {
