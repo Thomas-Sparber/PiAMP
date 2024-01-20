@@ -1,6 +1,6 @@
 const osc = require("node-osc");
 
-export class OSC {
+class OSC {
 
     port;
     oscClient;
@@ -10,7 +10,7 @@ export class OSC {
     }
 
     start() {
-        this.oscClient = new osc.Client("127.0.0.1", oscPort);
+        this.oscClient = new osc.Client("127.0.0.1", this.port);
     }
 
     send(path, value, callback) {
@@ -18,3 +18,5 @@ export class OSC {
     }
 
 }
+
+module.exports.OSC = OSC;

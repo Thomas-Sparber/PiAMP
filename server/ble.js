@@ -6,9 +6,9 @@ const AdvertisingDataBuilder = NodeBleHost.AdvertisingDataBuilder;
 const HciErrors = NodeBleHost.HciErrors;
 const AttErrors = NodeBleHost.AttErrors;
 
-export class BLE {
+class BLE {
 
-    deviceName
+    deviceName;
     updateParameterCallback;
     getIrsCallback;
     getModelsCallback;
@@ -24,6 +24,8 @@ export class BLE {
             // optional properties go here
         };
 
+        var self = this;
+
         BleManager.create(transport, options, function(err, manager) {
             // err is either null or an Error object
             // if err is null, manager contains a fully initialized BleManager object
@@ -34,7 +36,7 @@ export class BLE {
             
             var writeHandler = function(parameter, value, callback) {
                 console.log('A new value for ' + parameter + ' was written:', value.toString());
-                this.updateParameterCallback(parameter, value.toString());
+                self.updateParameterCallback(parameter, value.toString());
                 callback(AttErrors.SUCCESS);
             }
         
@@ -50,7 +52,7 @@ export class BLE {
         
             var writeCache = {};
             
-            manager.gattDb.setDeviceName(this.deviceName);
+            manager.gattDb.setDeviceName(self.deviceName);
             manager.gattDb.addServices([
                 {
                     uuid: '22222222-3333-4444-5555-666666666666',
@@ -123,7 +125,7 @@ export class BLE {
                             properties: ['read'],
                             onRead: function(connection, callback) {
                                 if(!writeCache["Ir"]) {
-                                    const result = this.getIrsCallback();
+                                    const result = self.getIrsCallback();
                                     writeCache["Ir"] = JSON.stringify(result) + "\n";
                                 }
         
@@ -143,7 +145,7 @@ export class BLE {
                             properties: ['read'],
                             onRead: function(connection, callback) {
                                 if(!writeCache["Model"]) {
-                                    const result = this.getModelsCallback();
+                                    const result = self.getModelsCallback();
                                     writeCache["Model"] = JSON.stringify(result) + "\n";
                                 }
         
@@ -175,7 +177,7 @@ export class BLE {
             
             const advDataBuffer = new AdvertisingDataBuilder()
                                     .addFlags(['leGeneralDiscoverableMode', 'brEdrNotSupported'])
-                                    .addLocalName(/*isComplete*/ true, this.deviceName)
+                                    .addLocalName(/*isComplete*/ true, self.deviceName)
                                     .add128BitServiceUUIDs(/*isComplete*/ true, ['22222222-3333-4444-5555-666666666666'])
                                     .build();
             manager.setAdvertisingData(advDataBuffer);
@@ -183,6 +185,7 @@ export class BLE {
             startAdv();
         
             function startAdv() {
+                console.log("Start BLE advertising " + self.deviceName);
                 manager.startAdvertising({/*options*/}, connectCallback);
             }
             
@@ -199,3 +202,5 @@ export class BLE {
     }
 
 }
+
+module.exports.BLE = BLE;
