@@ -15,29 +15,27 @@
     </ion-toolbar>
   </ion-header>
   
-  <ng-container *ngFor="let parameter of parameters">
-    <ion-range
-      *ngIf="parameter.type === 'slider'"
-      [value]="parameter.value"
-      labelPlacement="fixed"
-      [label]="parameter.label"
-      [(ngModel)]="parameter.value"
-      [pin]="true"
-      (ionChange)="onValueChanged($event, parameter)"></ion-range>
-
-      <ion-select
-        *ngIf="parameter.type === 'dropdown'"
-        [label]="parameter.label" placeholder="Please select"
-        [(ngModel)]="parameter.value"
-        (ionChange)="onValueChanged($event, parameter)">
-
-        <ion-select-option
-          *ngFor="let option of listValues[parameter.id] | async"
-          [value]="option.id">
-          
-          {{ option.name }}
-        </ion-select-option>
-      </ion-select>
-  </ng-container>
+  <ion-list *ngFor="let parameterGroup of parameters">
+    <ion-item>
+      <strong>{{parameterGroup.name}}</strong>
+    </ion-item>
+    <app-parameter *ngFor="let parameter of parameterGroup.parameters" [parameter]="parameter" (valueChanged)="onValueChanged($event)"></app-parameter>
+  </ion-list>
+  
+  <ion-accordion-group>
+    <ion-accordion value="first">
+      <ion-item slot="header" color="light">
+        <ion-label>Advanced</ion-label>
+      </ion-item>
+      <div class="ion-padding" slot="content">
+        <ion-list *ngFor="let parameterGroup of advancedParameters">
+          <ion-item>
+            <strong>{{parameterGroup.name}}</strong>
+          </ion-item>
+          <app-parameter *ngFor="let parameter of parameterGroup.parameters" [parameter]="parameter" (valueChanged)="onValueChanged($event)"></app-parameter>
+        </ion-list>
+      </div>
+    </ion-accordion>
+  </ion-accordion-group>
   
 </ion-content>

@@ -1,0 +1,45 @@
+<ng-container *ngIf="parameter">
+  <ion-item *ngIf="parameter.type === 'slider'">
+    <ion-range
+      *ngIf="parameter.type === 'slider'"
+      [value]="parameter.value"
+      labelPlacement="fixed"
+      [label]="parameter.label"
+      [(ngModel)]="parameter.value"
+      [pin]="true"
+      (ionChange)="onValueChanged($event, parameter)"></ion-range>
+
+    <!--<ion-range
+      [value]="parameter.value"
+      [(ngModel)]="parameter.value"
+      [pin]="true"
+      (ionChange)="onValueChanged($event, parameter)">
+    
+      <label>{{parameter.label}}</label>
+    </ion-range>-->
+  </ion-item>
+
+  <ion-item *ngIf="parameter.type === 'dropdown'">
+    <ion-select
+      [label]="parameter.label"
+      placeholder="Please select"
+      [(ngModel)]="parameter.value"
+      (ionChange)="onValueChanged($event, parameter)">
+
+      <ng-container *ngIf="parameter.listValues">
+        <ion-select-option *ngFor="let option of parameter.listValues | async" [value]="option.id">
+          {{ option.name }}
+        </ion-select-option>
+      </ng-container>
+    </ion-select>
+  </ion-item>
+
+  <ion-item *ngIf="parameter.type === 'switch'">
+    <ion-toggle
+      [(ngModel)]="parameter.value"
+      (ionChange)="onValueChanged($event, parameter)">
+
+      <ion-label>{{parameter.label}}</ion-label>
+    </ion-toggle>
+  </ion-item>
+</ng-container>
