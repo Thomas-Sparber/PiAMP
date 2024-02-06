@@ -10,11 +10,50 @@ class BLE {
 
     deviceName;
     updateParameterCallback;
-    getIrsCallback;
-    getModelsCallback;
+    getCallbacks;
+
+    parameterCharacteristics = {
+        Gain: 0x0000,
+        Master: 0x0001,
+        Bass: 0x0002,
+        Mid: 0x0003,
+        Treble: 0x0004,
+        Presence: 0x0005,
+        Model: 0x0006,
+        Ir: 0x0007,
+        Delay: 0x0008,
+        Reverb: 0x0009,
+        Chorus: 0x000C,
+        Flanger: 0x000D,
+        DelayWetLevel: 0x000E,
+        DelayTime: 0x000F,
+        DelayFeedback: 0x0010,
+        ChorusMix: 0x0011,
+        ChorusRate: 0x0012,
+        ChorusDepth: 0x0013,
+        ChorusCentreDelay: 0x0014,
+        ChorusFeedback: 0x0015,
+        FlangerMix: 0x0016,
+        FlangerRate: 0x0017,
+        FlangerDepth: 0x0018,
+        FlangerCentreDelay: 0x0019,
+        FlangerFeedback: 0x001A,
+        ReverbWetLevel: 0x001B,
+        ReverbDamping: 0x001C,
+        ReverbRoomSize: 0x001D,
+        AmpState: 0x001E,
+        LSTMState: 0x001F,
+        IrState: 0x0020
+    };
+
+    listCharacteristics = {
+        Ir: 0x000A,
+        Model: 0x000B
+    }
 
     constructor(deviceName) {
         this.deviceName = deviceName;
+        this.getCallbacks = {};
     }
 
     start() {
@@ -57,110 +96,37 @@ class BLE {
                 {
                     uuid: '22222222-3333-4444-5555-666666666666',
                     characteristics: [
-                        {
-                            uuid: 0x0000,
-                            properties: ['read','write'],
-                            onRead: function(connection, callback) {
-                                callback(AttErrors.SUCCESS, "Currently not implemented");
-                            },
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Gain", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Gain", callback); }
-                        }, {
-                            uuid: 0x0001,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Master", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Master", callback); }
-                        }, {
-                            uuid: 0x0002,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Bass", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Bass", callback); }
-                        }, {
-                            uuid: 0x0003,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Mid", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Mid", callback); }
-                        }, {
-                            uuid: 0x0004,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Treble", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Treble", callback); }
-                        }, {
-                            uuid: 0x0005,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Presence", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Presence", callback); }
-                        }, {
-                            uuid: 0x0006,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Model", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Model", callback); }
-                        }, {
-                            uuid: 0x0007,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Ir", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Ir", callback); }
-                        }, {
-                            uuid: 0x0008,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Reverb", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Reverb", callback); }
-                        }, {
-                            uuid: 0x0009,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Delay", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Delay", callback); }
-                        }, {
-                            uuid: 0x000C,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Chorus", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Chorus", callback); }
-                        }, {
-                            uuid: 0x000D,
-                            properties: ['read','write'],
-                            onWrite: function(connection, needsResponse, value, callback) { writeHandler("Flanger", value, callback); },
-                            onRead: function(connection, callback) { readHandler("Flanger", callback); }
-                        }, {
-                            uuid: 0x000A,
-                            properties: ['read'],
-                            onRead: function(connection, callback) {
-                                if(!writeCache["Ir"]) {
-                                    const result = self.getIrsCallback();
-                                    writeCache["Ir"] = JSON.stringify(result) + "\n";
-                                }
-        
-                                let sent = false;
-                                let divide = 1;
-                                while(!sent) {
-                                    const temp = writeCache["Ir"].substring(0, writeCache["Ir"].length / divide);
-                                    try {
-                                        callback(AttErrors.SUCCESS, temp);
-                                        sent = true;
-                                        writeCache["Ir"] = writeCache["Ir"].substring(writeCache["Ir"].length / divide);
-                                    } catch(e) {}
+                        ...Object.keys(self.parameterCharacteristics).map(function(ch) {
+                            return {
+                                uuid: self.parameterCharacteristics[ch],
+                                properties: ['read','write'],
+                                onWrite: function(connection, needsResponse, value, callback) { writeHandler(ch, value, callback); },
+                                onRead: function(connection, callback) { readHandler(ch, callback); }
+                            }
+                        }),
+                        ...Object.keys(self.listCharacteristics).map(function(ch) {
+                            return {
+                                uuid: self.listCharacteristics[ch],
+                                properties: ['read'],
+                                onRead: function(connection, callback) {
+                                    if(!writeCache[ch]) {
+                                        const result = self.getCallbacks[ch]();
+                                        writeCache[ch] = JSON.stringify(result) + "\n";
+                                    }
+            
+                                    let sent = false;
+                                    let divide = 1;
+                                    while(!sent) {
+                                        const temp = writeCache[ch].substring(0, writeCache[ch].length / divide);
+                                        try {
+                                            callback(AttErrors.SUCCESS, temp);
+                                            sent = true;
+                                            writeCache[ch] = writeCache[ch].substring(writeCache[ch].length / divide);
+                                        } catch(e) {}
+                                    }
                                 }
                             }
-                        }, {
-                            uuid: 0x000B,
-                            properties: ['read'],
-                            onRead: function(connection, callback) {
-                                if(!writeCache["Model"]) {
-                                    const result = self.getModelsCallback();
-                                    writeCache["Model"] = JSON.stringify(result) + "\n";
-                                }
-        
-                                let sent = false;
-                                let divide = 1;
-                                while(!sent) {
-                                    const temp = writeCache["Model"].substring(0, writeCache["Model"].length / divide);
-                                    try {
-                                        callback(AttErrors.SUCCESS, temp);
-                                        sent = true;
-                                        writeCache["Model"] = writeCache["Model"].substring(writeCache["Model"].length / divide);
-                                    } catch(e) {}
-                                }
-                            }
-                        }/*,
+                        })/*,
                         notificationCharacteristic = {
                             uuid: '22222222-3333-4444-5555-66666666666A',
                             properties: ['notify'],

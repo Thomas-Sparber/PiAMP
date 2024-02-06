@@ -65,8 +65,8 @@ function getModels() {
 var bleClient = new ble.BLE(deviceName);
 bleClient.start();
 bleClient.updateParameterCallback = updateParameter;
-bleClient.getIrsCallback = getIrs;
-bleClient.getModelsCallback = getModels;
+bleClient.getCallbacks["Ir"] = getIrs;
+bleClient.getCallbacks["Model"] = getModels;
 
 
 server.listen(port, function() {

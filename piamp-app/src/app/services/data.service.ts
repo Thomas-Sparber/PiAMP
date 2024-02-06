@@ -32,7 +32,26 @@ export class DataService {
     Delay: 0x0008,
     Reverb: 0x0009,
     Chorus: 0x000C,
-    Flanger: 0x000D
+    Flanger: 0x000D,
+    DelayWetLevel: 0x000E,
+    DelayTime: 0x000F,
+    DelayFeedback: 0x0010,
+    ChorusMix: 0x0011,
+    ChorusRate: 0x0012,
+    ChorusDepth: 0x0013,
+    ChorusCentreDelay: 0x0014,
+    ChorusFeedback: 0x0015,
+    FlangerMix: 0x0016,
+    FlangerRate: 0x0017,
+    FlangerDepth: 0x0018,
+    FlangerCentreDelay: 0x0019,
+    FlangerFeedback: 0x001A,
+    ReverbWetLevel: 0x001B,
+    ReverbDamping: 0x001C,
+    ReverbRoomSize: 0x001D,
+    AmpState: 0x001E,
+    LSTMState: 0x001F,
+    IrState: 0x0020
   };
 
   listCharacteristics: { [key: string]: number } = {

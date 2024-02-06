@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 
 import { DevicePage } from './device.page';
 import { DevicePageRoutingModule } from './device-routing.module';
+import { ParameterPage } from '../parameter/parameter.page';
 
 @NgModule({
   imports: [
@@ -13,6 +14,9 @@ import { DevicePageRoutingModule } from './device-routing.module';
     IonicModule,
     DevicePageRoutingModule
   ],
-  declarations: [DevicePage]
+  declarations: [
+    DevicePage,
+    ParameterPage
+  ]
 })
 export class DevicePageModule {}
