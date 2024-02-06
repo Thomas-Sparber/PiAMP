@@ -203,4 +203,4 @@ class BLE {
 
 }
 
-module.exports.BLE = BLE;
+module.exports = BLE;

@@ -5,9 +5,10 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const osc = require('./osc');
-const ble = require('./ble');
-
+const OSC = require('./osc');
+const BLE = require('./ble');
+const SerialUSB = require('./serialusb');
+const Footswitch = require('./footswitch');
 
 
 const deviceName = 'PiAMP';
@@ -17,11 +18,18 @@ const version = "1.0.0";
 const irsFolder = "/home/mind/Documents/GuitarML/NeuralPi/irs";
 const modelsFolder = "/home/mind/Documents/GuitarML/NeuralPi/tones";
 
-var oscClient = new osc.OSC(oscPort);
+var oscClient = new OSC(oscPort);
 oscClient.start();
 
 var app = express();
 var server = http.createServer(app);
+
+var serialusb = new SerialUSB();
+serialusb.receivedCallbacks.push(function(data) {
+    console.log("Serial data received: ", data);
+});
+serialusb.start();
+
 
 
 
@@ -62,11 +70,26 @@ function getModels() {
     return result;
 }
 
-var bleClient = new ble.BLE(deviceName);
+var bleClient = new BLE(deviceName);
 bleClient.start();
 bleClient.updateParameterCallback = updateParameter;
 bleClient.getIrsCallback = getIrs;
 bleClient.getModelsCallback = getModels;
+
+
+function switchFXChannel(channel, state, notifyOptions) {
+
+}
+
+function switchChannel(channel, notifyOptions) {
+
+}
+
+
+var footswitch = new Footswitch(serialusb);
+footswitch.fxCallback = function(channel, state) { switchFXChannel(channel, state, { notifyFootswitch: false }) };
+footswitch.channelCallback = function(channel) { switchChannel(channel, { notifyFootswitch: false }) };
+footswitch.channelSaveCallback = function(channel, isFX) {};
 
 
 server.listen(port, function() {

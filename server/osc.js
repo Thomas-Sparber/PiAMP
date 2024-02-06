@@ -19,4 +19,4 @@ class OSC {
 
 }
 
-module.exports.OSC = OSC;
+module.exports = OSC;
