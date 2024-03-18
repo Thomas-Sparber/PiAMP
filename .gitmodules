@@ -1,0 +1,3 @@
+[submodule "NAM_to_NeuralPi"]
+	path = NAM_to_NeuralPi
+	url = https://github.com/Thomas-Sparber/NAM_to_NeuralPi.git

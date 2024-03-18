@@ -9,25 +9,5 @@ import { BleClient } from '@capacitor-community/bluetooth-le';
   styleUrls: ['app.component.scss'],
 })
 export class AppComponent {
-
-  constructor(
-    private platform: Platform
-  ) {
-    this.init();
-  }
-
-  async init() {
-    console.log("App started");
-
-    await this.platform.ready();
-
-    console.log("Platform ready");
-
-    try {
-      await BleClient.initialize(/*{ androidNeverForLocation: true }*/);
-    } catch(e) {
-      console.log("Bluetooth not available");
-    }
-  }
   
 }
