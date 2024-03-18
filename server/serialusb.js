@@ -37,19 +37,50 @@ class SerialUSB {
                         lastWritten: ""
                     }
 
+                    port.serialport.on('error', function(err) {
+                        console.log('Serial port error: ', err.message);
+                    });
+
                     self.ports.push(port);
 
                     let helper = "";
                     port.serialport.on('data', function(data){
                         helper += data;
 
-                        if(helper.endsWith("\n")) {
-                            if(helper != port.lastWritten) {
-                                receivedCallbacks.forEach(function(callback) {
-                                    callback(JSON.parse(helper), port, function(toSend) {
-                                        toSend = JSON.stringify(toSend) + "\n";
+                        const index = helper.indexOf("\n");
+                        if(index != -1) {
+                            let received = helper.substring(0, index);
+                            helper = helper.substring(index + 1);
+
+                            if(received != port.lastWritten) {
+                                try {
+                                    received = JSON.parse(received);
+                                } catch(e) {
+                                    console.log("Invalid JSON: " + received, e);
+                                }
+
+                                self.receivedCallbacks.forEach(function(callback) {
+                                    callback(received, port, function(toSend, format) {
+                                        if(!format || format == "json") {
+                                            toSend = JSON.stringify(toSend) + "\n";
+//console.log("Sent", toSend);
+                                        }
+                                        else if(format == "string") {
+                                            toSend = toSend + "\n";
+//console.log("Sent", toSend);
+                                        }
+                                        else if(format == "binary") {
+                                            //don't do anything
+//console.log("Sent binary (" + toSend.length + ")");
+                                        }
+
                                         port.lastWritten = toSend;
-                                        port.serialport.write(toSend);
+                                        port.serialport.write(toSend, function(er) {
+                                            if(err) {
+                                                console.log("Error writing to serial port", err);
+                                            }
+                                        });
+                                        //console.log("Sent", toSend);
                                     });
                                 });
                             }

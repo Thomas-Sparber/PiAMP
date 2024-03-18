@@ -9,6 +9,7 @@ const AttErrors = NodeBleHost.AttErrors;
 class BLE {
 
     deviceName;
+    getParameterCallback;
     updateParameterCallback;
     getCallbacks;
 
@@ -81,7 +82,7 @@ class BLE {
         
             var readHandler = function(parameter, callback) {
                 const result = {
-                    value: parameters[parameter]
+                    value: self.getParameterCallback(parameter)
                 };
         
                 callback(AttErrors.SUCCESS, JSON.stringify(result));
@@ -101,7 +102,10 @@ class BLE {
                                 uuid: self.parameterCharacteristics[ch],
                                 properties: ['read','write'],
                                 onWrite: function(connection, needsResponse, value, callback) { writeHandler(ch, value, callback); },
-                                onRead: function(connection, callback) { readHandler(ch, callback); }
+                                onRead: function(connection, callback) {
+                                    //console.log("Read " + self.parameterCharacteristics[ch]);
+                                    readHandler(ch, callback);
+                                }
                             }
                         }),
                         ...Object.keys(self.listCharacteristics).map(function(ch) {
@@ -109,9 +113,12 @@ class BLE {
                                 uuid: self.listCharacteristics[ch],
                                 properties: ['read'],
                                 onRead: function(connection, callback) {
+                                    //console.log("Read " + self.listCharacteristics[ch]);
+
                                     if(!writeCache[ch]) {
                                         const result = self.getCallbacks[ch]();
                                         writeCache[ch] = JSON.stringify(result) + "\n";
+
                                     }
             
                                     let sent = false;
@@ -122,7 +129,9 @@ class BLE {
                                             callback(AttErrors.SUCCESS, temp);
                                             sent = true;
                                             writeCache[ch] = writeCache[ch].substring(writeCache[ch].length / divide);
-                                        } catch(e) {}
+                                        } catch(e) {
+                                            divide++;
+                                        }
                                     }
                                 }
                             }
@@ -162,7 +171,7 @@ class BLE {
                     return;
                 }
                 conn.on('disconnect', startAdv); // restart advertising after disconnect
-                console.log('Connection established!'/*, conn*/);
+                console.log('BLE Connection established!'/*, conn*/);
             }
         });
     }

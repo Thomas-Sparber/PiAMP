@@ -1,0 +1,128 @@
+{
+    "Gain": {
+        "isChannel": true,
+        "isFX": false
+    },
+    "Master": {
+        "isChannel": true,
+        "isFX": false
+    },
+    "Bass": {
+        "isChannel": true,
+        "isFX": false
+    },
+    "Mid": {
+        "isChannel": true,
+        "isFX": false
+    },
+    "Treble": {
+        "isChannel": true,
+        "isFX": false
+    },
+    "Presence": {
+        "isChannel": true,
+        "isFX": false
+    },
+    "Model": {
+        "isChannel": true,
+        "isFX": false
+    },
+    "Ir": {
+        "isChannel": true,
+        "isFX": false
+    },
+
+
+    "Delay": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "DelayWetLevel": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "DelayTime": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "DelayFeedback": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "Chorus": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "ChorusMix": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "ChorusRate": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "ChorusDepth": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "ChorusCentreDelay": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "ChorusFeedback": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "Flanger": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "FlangerMix": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "FlangerRate": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "FlangerDepth": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "FlangerCentreDelay": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "FlangerFeedback": {
+        "isChannel": false,
+        "isFX": true
+    },
+    "Reverb": {
+        "isChannel": false,
+        "isFX": false
+    },
+    "ReverbWetLevel": {
+        "isChannel": false,
+        "isFX": false
+    },
+    "ReverbDamping": {
+        "isChannel": false,
+        "isFX": false
+    },
+    "ReverbRoomSize": {
+        "isChannel": false,
+        "isFX": false
+    },
+    "AmpState": {
+        "isChannel": false,
+        "isFX": false
+    },
+    "LSTMState": {
+        "isChannel": false,
+        "isFX": false
+    },
+    "IrState": {
+        "isChannel": true,
+        "isFX": false
+    }
+}
