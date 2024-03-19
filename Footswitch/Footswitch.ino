@@ -34,15 +34,15 @@ Channel channels[] = {
 
   Channel(
     "FX1",  //name
-    4,      //switchPin
-    3,      //ledPin
+    5,      //switchPin
+    4,      //ledPin
     false,  //hasSubChannel
     true    //isFxChannel
   ),
   Channel(
     "FX2",  //name
-    2,      //switchPin
-    5,      //ledPin
+    3,      //switchPin
+    2,      //ledPin
     false,  //hasSubChannel
     true    //isFxChannel
   )
@@ -68,7 +68,9 @@ String lastSentCommand;
 String currentCommand;
 
 void setup() {
-  Serial.begin(115200);
+  //Serial1.setRX(1);
+  //Serial1.setTX(0);
+  Serial1.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
 
   for(int i = 0; i < channelsCount; ++i) {
@@ -83,7 +85,8 @@ void setup() {
 
 void sendCommand(String command) {
   lastSentCommand = command;
-  Serial.println(command);
+  Serial1.print(command);
+  Serial1.print("\n");
 }
 
 void switchOffChannelsExcept(String name) {
@@ -104,6 +107,8 @@ bool handleChannel(Channel &ch, int diffMillis, int currentTimeMillis) {
       ch.pressedMillis = 0;
 
       if(ch.isFxChannel) {
+        ch.saveState = 1;
+        
         //FX channels can be switched on and off independently
         if(ch.state == 0) {
           ch.state = 1;
@@ -122,11 +127,14 @@ bool handleChannel(Channel &ch, int diffMillis, int currentTimeMillis) {
         if(ch.state == 1 && ch.hasSubChannel) {
           ch.state = 2;
           ch.ledStateCounter = 0;
+          ch.saveState = 1;
         } else if(ch.state == 2) {
           ch.state = 1;
+          ch.saveState = 2;
         } else {
           if(ch.previousState == 0)ch.previousState = 1;
           ch.state = ch.previousState;
+          ch.saveState = ch.previousState;
         }
 
         if(ch.state == 1) {
@@ -147,21 +155,39 @@ bool handleChannel(Channel &ch, int diffMillis, int currentTimeMillis) {
 
 
   //save blinking
+  bool currentlySaving = false;
   int saveState = HIGH;
   if(ch.currentSwitchState == LOW) {
     ch.pressedMillis += diffMillis;
 
     if(ch.pressedMillis >= saveTimeStartMillis) {
+      currentlySaving = true;
+      
       if((ch.pressedMillis / saveBlinkTimeMillis) % 2 == 1) {
         saveState = LOW;
       }
     }
 
     if(ch.pressedMillis > saveTimeMillis) {
-      if(ch.state == 2) {
-        sendCommand("{\"action\":\"channelsave\",\"channel\":\"" + ch.name + "-sub\"}");
+      if(ch.saveState == 2) {
+        sendCommand("{\"action\":\"channelsave\",\"channel\":\"" + ch.name + "-sub\", \"isFX\":" + (ch.isFxChannel ? "true" : "false") + "}");
       } else {
-        sendCommand("{\"action\":\"channelsave\",\"channel\":\"" + ch.name + "\"}");
+        sendCommand("{\"action\":\"channelsave\",\"channel\":\"" + ch.name + "\", \"isFX\":" + (ch.isFxChannel ? "true" : "false") + "}");
+      }
+
+      //restore save state
+      if(ch.state != ch.saveState) {
+        ch.state = ch.saveState;
+
+        if(ch.isFxChannel) {
+          sendCommand("{\"action\":\"fxon\",\"channel\":\"" + ch.name + "\"}");
+        } else {
+          if(ch.state == 1) {
+            sendCommand("{\"action\":\"channelswitch\",\"channel\":\"" + ch.name + "\"}");
+          } else {
+            sendCommand("{\"action\":\"channelswitch\",\"channel\":\"" + ch.name + "-sub\"}");
+          }
+        }
       }
       
       ch.pressedMillis = 0;
@@ -171,7 +197,7 @@ bool handleChannel(Channel &ch, int diffMillis, int currentTimeMillis) {
 
   //sub channel blinking
   int subChannelState = HIGH;
-  if (ch.state == 2) {
+  if (ch.state == 2 || currentlySaving) {
     ch.ledStateCounter += diffMillis;
 
     if((ch.ledStateCounter / subBlinkTimeMillis) % 2 == 1) {
@@ -180,7 +206,7 @@ bool handleChannel(Channel &ch, int diffMillis, int currentTimeMillis) {
   }
 
 
-  if(ch.state == 0 || saveState == LOW || subChannelState == LOW) {
+  if((ch.state == 0 && !currentlySaving) || saveState == LOW || subChannelState == LOW) {
     digitalWrite(ch.ledPin, LOW);
   } else {
     digitalWrite(ch.ledPin, HIGH);
@@ -237,9 +263,8 @@ void handleCommand(String command) {
 }
 
 void handleSerial() {
-  while(Serial.available() > 0) {
-    int b = Serial.read();
-    currentCommand += (char)b;
+  while(Serial1.available() > 0) {
+    int b = Serial1.read();
 
     if(b == '\n') {
       if(currentCommand == lastSentCommand) {
@@ -249,6 +274,8 @@ void handleSerial() {
       }
       
       currentCommand = "";
+    } else {
+      currentCommand += (char)b;
     }
   }
 }
