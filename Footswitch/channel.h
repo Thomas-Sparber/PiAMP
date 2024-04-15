@@ -10,6 +10,7 @@ struct Channel {
     isFxChannel(b_isFxChannel),
     state(0),
     previousState(0),
+    saveState(0),
     currentSwitchState(LOW),
     previousSwitchState(LOW),
     lastSwitched(0),
@@ -35,6 +36,11 @@ struct Channel {
    */
   int state;
   int previousState;
+
+  /**
+   * Is used to temporarily store which state should be saved
+   */
+  int saveState;
 
   /**
    * The following 2 variables are internally used to determine wheter the switch is/was
