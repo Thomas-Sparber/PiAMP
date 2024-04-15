@@ -11,6 +11,7 @@ const ImageReader = require('./imagereader');
 const SerialUSB = require('./serialusb');
 const Footswitch = require('./footswitch');
 const Controls = require('./controls');
+const PoweroffButton = require('./poweroffbutton');
 const ParameterDefinitions = require('./ParameterDefinitions.json');
 
 
@@ -67,8 +68,25 @@ function getIrs() {
     const result = [];
 
     fs.readdirSync(irsFolder).forEach(file => {
-        const name = path.parse(irsFolder + "/" + file).name
-        result.push({ id: name, name: name });
+        if(file.toLowerCase().endsWith("wav")) {
+            const id = path.parse(irsFolder + "/" + file).name;
+            let name = id;
+            let image = id;
+
+            const jsonFile = irsFolder + "/" + id + ".json";
+            if(fs.existsSync(jsonFile)) {
+                const content = fs.readFileSync(jsonFile);
+                const parsed = JSON.parse(content);
+                if(parsed.name)name = parsed.name;
+                if(parsed.image)image = parsed.image;
+            }
+
+            result.push({
+                id: id,
+                name: name,
+                image: image
+            });
+        }
     });
 
     return result;
@@ -78,10 +96,17 @@ function getModels() {
     const result = [];
 
     fs.readdirSync(modelsFolder).forEach(file => {
-        const content = fs.readFileSync(modelsFolder + "/" + file);
-        const parsed = JSON.parse(content);
-        const id = path.parse(modelsFolder + "/" + file).name;
-        result.push({ id: id, name: parsed.name || id });
+        if(file.toLowerCase().endsWith("json")) {
+            const content = fs.readFileSync(modelsFolder + "/" + file);
+            const parsed = JSON.parse(content);
+            const id = path.parse(modelsFolder + "/" + file).name;
+
+            result.push({
+                id: id,
+                name: parsed.name || id,
+                image: parsed.image || id
+            });
+        }
     });
 
     return result;
@@ -186,6 +211,11 @@ controls.getImageCallback = function(name, x, y, w, h) {
 }
 controls.getCallbacks["Ir"] = getIrs;
 controls.getCallbacks["Model"] = getModels;
+["Model", "Ir"].forEach(function(param) {
+    controls.paramChangedCallbacks[param] = function(value) {
+        updateParameter(param, value);
+    }
+});
 
 server.listen(port, function() {
     console.log('Http server started on port ' + port);
@@ -235,4 +265,10 @@ app.use(express.static(__dirname + '/../piamp-app/www/'));
 
 app.get("*", function(req, res) {
     res.sendFile(path.join(__dirname + '/../piamp-app/www/index.html'));
+});
+
+const poweroffbutton = new PoweroffButton();
+poweroffbutton.watch(function() {
+    console.log("Poweroff button pressed, bye bye");
+    poweroffbutton.poweroff();
 });

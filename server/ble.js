@@ -58,122 +58,141 @@ class BLE {
     }
 
     start() {
-        var transport = new HciSocket(); // connects to the first hci device on the computer, for example hci0
-
-        var options = {
-            // optional properties go here
-        };
-
         var self = this;
 
-        BleManager.create(transport, options, function(err, manager) {
-            // err is either null or an Error object
-            // if err is null, manager contains a fully initialized BleManager object
-            if (err) {
-                console.error(err);
+        var counter = 0;
+
+        var tryStart = function() {
+            var transport;
+
+            try {
+                transport = new HciSocket(); // connects to the first hci device on the computer, for example hci0
+            } catch(e) {
+                counter++;
+
+                if(counter == 10) {
+                    throw e;
+                }
+
+                setTimeout(tryStart, 1000);
                 return;
             }
-            
-            var writeHandler = function(parameter, value, callback) {
-                console.log('A new value for ' + parameter + ' was written:', value.toString());
-                self.updateParameterCallback(parameter, value.toString());
-                callback(AttErrors.SUCCESS);
-            }
-        
-            var readHandler = function(parameter, callback) {
-                const result = {
-                    value: self.getParameterCallback(parameter)
-                };
-        
-                callback(AttErrors.SUCCESS, JSON.stringify(result));
-            }
-            
-            var notificationCharacteristic;
-        
-            var writeCache = {};
-            
-            manager.gattDb.setDeviceName(self.deviceName);
-            manager.gattDb.addServices([
-                {
-                    uuid: '22222222-3333-4444-5555-666666666666',
-                    characteristics: [
-                        ...Object.keys(self.parameterCharacteristics).map(function(ch) {
-                            return {
-                                uuid: self.parameterCharacteristics[ch],
-                                properties: ['read','write'],
-                                onWrite: function(connection, needsResponse, value, callback) { writeHandler(ch, value, callback); },
-                                onRead: function(connection, callback) {
-                                    //console.log("Read " + self.parameterCharacteristics[ch]);
-                                    readHandler(ch, callback);
-                                }
-                            }
-                        }),
-                        ...Object.keys(self.listCharacteristics).map(function(ch) {
-                            return {
-                                uuid: self.listCharacteristics[ch],
-                                properties: ['read'],
-                                onRead: function(connection, callback) {
-                                    //console.log("Read " + self.listCharacteristics[ch]);
 
-                                    if(!writeCache[ch]) {
-                                        const result = self.getCallbacks[ch]();
-                                        writeCache[ch] = JSON.stringify(result) + "\n";
+            var options = {
+                // optional properties go here
+            };
 
+            BleManager.create(transport, options, function(err, manager) {
+                // err is either null or an Error object
+                // if err is null, manager contains a fully initialized BleManager object
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+            
+                var writeHandler = function(parameter, value, callback) {
+                    console.log('A new value for ' + parameter + ' was written:', value.toString());
+                    self.updateParameterCallback(parameter, value.toString());
+                    callback(AttErrors.SUCCESS);
+                }
+        
+                var readHandler = function(parameter, callback) {
+                    const result = {
+                        value: self.getParameterCallback(parameter)
+                    };
+        
+                    callback(AttErrors.SUCCESS, JSON.stringify(result));
+                }
+            
+                var notificationCharacteristic;
+        
+                var writeCache = {};
+            
+                manager.gattDb.setDeviceName(self.deviceName);
+                manager.gattDb.addServices([
+                    {
+                        uuid: '22222222-3333-4444-5555-666666666666',
+                        characteristics: [
+                            ...Object.keys(self.parameterCharacteristics).map(function(ch) {
+                                return {
+                                    uuid: self.parameterCharacteristics[ch],
+                                    properties: ['read','write'],
+                                    onWrite: function(connection, needsResponse, value, callback) { writeHandler(ch, value, callback); },
+                                    onRead: function(connection, callback) {
+                                        //console.log("Read " + self.parameterCharacteristics[ch]);
+                                        readHandler(ch, callback);
                                     }
+                                }
+                            }),
+                            ...Object.keys(self.listCharacteristics).map(function(ch) {
+                                return {
+                                    uuid: self.listCharacteristics[ch],
+                                    properties: ['read'],
+                                    onRead: function(connection, callback) {
+                                        //console.log("Read " + self.listCharacteristics[ch]);
+
+                                        if(!writeCache[ch]) {
+                                            const result = self.getCallbacks[ch]();
+                                            writeCache[ch] = JSON.stringify(result) + "\n";
+
+                                        }
             
-                                    let sent = false;
-                                    let divide = 1;
-                                    while(!sent) {
-                                        const temp = writeCache[ch].substring(0, writeCache[ch].length / divide);
-                                        try {
-                                            callback(AttErrors.SUCCESS, temp);
-                                            sent = true;
-                                            writeCache[ch] = writeCache[ch].substring(writeCache[ch].length / divide);
-                                        } catch(e) {
-                                            divide++;
+                                        let sent = false;
+                                        let divide = 1;
+                                        while(!sent) {
+                                            const temp = writeCache[ch].substring(0, writeCache[ch].length / divide);
+                                            try {
+                                                callback(AttErrors.SUCCESS, temp);
+                                                sent = true;
+                                                writeCache[ch] = writeCache[ch].substring(writeCache[ch].length / divide);
+                                            } catch(e) {
+                                                divide++;
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        })/*,
-                        notificationCharacteristic = {
-                            uuid: '22222222-3333-4444-5555-66666666666A',
-                            properties: ['notify'],
-                            onSubscriptionChange: function(connection, notification, indication, isWrite) {
-                                if (notification) {
-                                    // Notifications are now enabled, so let's send something
-                                    notificationCharacteristic.notify(connection, 'Sample notification');
+                            })/*,
+                            notificationCharacteristic = {
+                                uuid: '22222222-3333-4444-5555-66666666666A',
+                                properties: ['notify'],
+                                onSubscriptionChange: function(connection, notification, indication, isWrite) {
+                                    if (notification) {
+                                        // Notifications are now enabled, so let's send something
+                                        notificationCharacteristic.notify(connection, 'Sample notification');
+                                    }
                                 }
-                            }
-                        }*/
-                    ]
-                }
-            ]);
+                            }*/
+                        ]
+                    }
+                ]);
             
-            const advDataBuffer = new AdvertisingDataBuilder()
-                                    .addFlags(['leGeneralDiscoverableMode', 'brEdrNotSupported'])
-                                    .addLocalName(/*isComplete*/ true, self.deviceName)
-                                    .add128BitServiceUUIDs(/*isComplete*/ true, ['22222222-3333-4444-5555-666666666666'])
-                                    .build();
-            manager.setAdvertisingData(advDataBuffer);
-            // call manager.setScanResponseData(...) if scan response data is desired too
-            startAdv();
+                const advDataBuffer = new AdvertisingDataBuilder()
+                                        .addFlags(['leGeneralDiscoverableMode', 'brEdrNotSupported'])
+                                        .addLocalName(/*isComplete*/ true, self.deviceName)
+                                        .add128BitServiceUUIDs(/*isComplete*/ true, ['22222222-3333-4444-5555-666666666666'])
+                                        .build();
+                manager.setAdvertisingData(advDataBuffer);
+                // call manager.setScanResponseData(...) if scan response data is desired too
+                startAdv();
         
-            function startAdv() {
-                console.log("Start BLE advertising " + self.deviceName);
-                manager.startAdvertising({/*options*/}, connectCallback);
-            }
-            
-            function connectCallback(status, conn) {
-                if (status != HciErrors.SUCCESS) {
-                    // Advertising could not be started for some controller-specific reason, try again after 10 seconds
-                    setTimeout(startAdv, 10000);
-                    return;
+                function startAdv() {
+                    console.log("Start BLE advertising " + self.deviceName);
+                    manager.startAdvertising({/*options*/}, connectCallback);
                 }
-                conn.on('disconnect', startAdv); // restart advertising after disconnect
-                console.log('BLE Connection established!'/*, conn*/);
-            }
-        });
+            
+                function connectCallback(status, conn) {
+                    if (status != HciErrors.SUCCESS) {
+                        // Advertising could not be started for some controller-specific reason, try again after 10 seconds
+                        setTimeout(startAdv, 10000);
+                        return;
+                    }
+                    conn.on('disconnect', startAdv); // restart advertising after disconnect
+                    console.log('BLE Connection established!'/*, conn*/);
+                }
+            });
+        };
+
+        tryStart();
     }
 
 }

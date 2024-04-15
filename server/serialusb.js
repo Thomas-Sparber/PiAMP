@@ -63,15 +63,12 @@ class SerialUSB {
                                     callback(received, port, function(toSend, format) {
                                         if(!format || format == "json") {
                                             toSend = JSON.stringify(toSend) + "\n";
-//console.log("Sent", toSend);
                                         }
                                         else if(format == "string") {
                                             toSend = toSend + "\n";
-//console.log("Sent", toSend);
                                         }
                                         else if(format == "binary") {
                                             //don't do anything
-//console.log("Sent binary (" + toSend.length + ")");
                                         }
 
                                         port.lastWritten = toSend;
