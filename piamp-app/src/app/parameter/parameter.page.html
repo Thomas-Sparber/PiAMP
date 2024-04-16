@@ -28,13 +28,16 @@
         (ionChange)="onValueChanged($event, parameter)">
 
         <ng-container *ngIf="parameter.listValues">
-          <ion-select-option *ngFor="let option of parameter.listValues | async" [value]="option.id">
+          <ion-select-option *ngFor="let option of parameter.listValues" [value]="option.id">
             {{ option.name }}
           </ion-select-option>
         </ng-container>
       </ion-select>
     </ion-item>
     <ion-item>
+      <ion-button slot="end" (click)="refresh()">
+        <ion-icon slot="icon-only" name="refresh"></ion-icon>
+      </ion-button>
       <ion-button slot="end" (click)="next()">
         <ion-icon slot="icon-only" name="caret-back-outline"></ion-icon>
       </ion-button>

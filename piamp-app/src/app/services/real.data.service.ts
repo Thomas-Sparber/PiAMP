@@ -50,7 +50,8 @@ export class RealDataService extends DataService {
     ReverbRoomSize: 0x001D,
     AmpState: 0x001E,
     LSTMState: 0x001F,
-    IrState: 0x0020
+    IrState: 0x0020,
+    Record: 0x0021
   };
 
   listCharacteristics: { [key: string]: number } = {
@@ -188,7 +189,7 @@ export class RealDataService extends DataService {
 
   async readBLEParameterValue(parameterId: string) {
     const characteristics = this.parameterCharacteristics[parameterId];
-    if(!characteristics)console.log("No characteristics found for parameter id " + parameterId, this.parameterCharacteristics);
+    if(characteristics === undefined)console.log("No characteristics found for parameter id " + parameterId, this.parameterCharacteristics);
     const dv = await BleClient.read(this.connectedDevice!.deviceId, this.serviceUUID, numberToUUID(characteristics));
     
     try {
@@ -223,7 +224,12 @@ export class RealDataService extends DataService {
       result = result + this.decoder.decode(dv);
     } while(!result.endsWith("\n"));
 
-    return JSON.parse(result) as IdName[];
+    try {
+      	return JSON.parse(result) as IdName[];
+    } catch(e) {
+        console.log("Unable to parse json for BLE list " + parameterId, result);
+        return [];
+    }
   }
 
   async getRESTListData(parameterId: string) {

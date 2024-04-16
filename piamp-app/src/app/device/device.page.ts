@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { LoadingController } from '@ionic/angular';
+import { Storage } from '@ionic/storage-angular';
+
 import { DataService } from '../services/data.service';
 import { IdName } from '../models/id.name';
 import { Parameter } from '../models/parameter';
@@ -11,9 +14,9 @@ import { ParameterGroup } from '../models/parameter.group';
 })
 export class DevicePage implements OnInit {
 
-  listValues: { [key: string]: Promise<IdName[]> } = {
-    Model: this.data.getListData("Model"),
-    Ir: this.data.getListData("Ir")
+  listValues: { [key: string]: IdName[] } = {
+    Model: [],
+    Ir: []
   };
   
   delayParameter: Parameter =   { id: "Delay",   label: "Delay",   value: 0, type: "slider" };
@@ -39,6 +42,9 @@ export class DevicePage implements OnInit {
       this.chorusParameter,
       this.flangerParameter,
       this.reverbParameter
+    ] },
+    { name: "Record", parameters: [
+      { id: "Record",   label: "Record",           value: false, type: "switch" },
     ] }
   ];
 
@@ -80,15 +86,63 @@ export class DevicePage implements OnInit {
 
   isHTTPBackend: Promise<boolean>;
   deviceName: Promise<string>;
+  advancedLoaded = false;
 
   constructor(
+    private loadingCtrl: LoadingController,
+    private storage: Storage,
     private data: DataService
   ) {
     this.isHTTPBackend = data.isHTTPBackend();
     this.deviceName = data.getDeviceName();
   }
 
-  async ngOnInit() {
+  ngOnInit() {
+    this.loadParameters();
+  }
+
+  async loadModelList(useStorage = true) {
+    if(useStorage !== false) {
+      const modelListString = await this.storage.get("ModelList") as string;
+
+      if(modelListString) {
+        try {
+          const modelList = JSON.parse(modelListString) as IdName[];
+          this.listValues["Model"].splice(0, this.listValues["Model"].length, ...modelList);
+          return;
+        } catch(e) {} 
+      }
+    }
+
+    this.listValues["Model"].splice(0, this.listValues["Model"].length, ...await this.data.getListData("Model"));
+    this.storage.set("ModelList", JSON.stringify(this.listValues["Model"]));
+  }
+
+  async loadIrList(useStorage = true) {
+    if(useStorage !== false) {
+      const irListString = await this.storage.get("IrList") as string;
+
+      if(irListString) {
+        try {
+          const irList = JSON.parse(irListString) as IdName[];
+          this.listValues["Ir"].splice(0, this.listValues["Ir"].length, ...irList);
+          return;
+        } catch(e) {} 
+      }
+    }
+
+    this.listValues["Ir"].splice(0, this.listValues["Ir"].length, ...await this.data.getListData("Ir"));
+    this.storage.set("IrList", JSON.stringify(this.listValues["Ir"]));
+  }
+
+  async loadParameters() {
+    const loading = await this.loadingCtrl.create();
+    loading.present();
+
+    await this.storage.create();
+    await this.loadModelList();
+    await this.loadIrList();
+
     for(let i = 0; i < this.parameters.length; i++) {
       for(let j = 0; j < this.parameters[i].parameters.length; j++) {
         const p = this.parameters[i].parameters[j];
@@ -96,12 +150,26 @@ export class DevicePage implements OnInit {
       }
     }
 
+    loading.dismiss();
+  }
+
+  async loadAdvancedParameters() {
+    if(this.advancedLoaded) {
+      return;
+    }
+
+    const loading = await this.loadingCtrl.create();
+    loading.present();
+
     for(let i = 0; i < this.advancedParameters.length; i++) {
       for(let j = 0; j < this.advancedParameters[i].parameters.length; j++) {
         const p = this.advancedParameters[i].parameters[j];
         await this.loadParameter(p);
       }
     }
+
+    this.advancedLoaded = true;
+    loading.dismiss();
   }
 
   async loadParameter(parameter: Parameter) {
@@ -128,6 +196,28 @@ export class DevicePage implements OnInit {
       stringValue = "" + parameter.value;
     }
     await this.data.sendParameterValue(parameter.id, stringValue);
+  }
+
+  async refreshParameter(parameter: Parameter) {
+    const loading = await this.loadingCtrl.create();
+    loading.present();
+
+    if(parameter.id == "Model") {
+      await this.loadModelList(false);
+    }
+
+    if(parameter.id == "Ir") {
+      await this.loadIrList(false);
+    }
+
+    this.loadParameter(parameter);
+
+    loading.dismiss();
+  }
+
+  async refreshAllParameters() {
+    this.advancedLoaded = false;
+    await this.loadParameters();
   }
 
 }

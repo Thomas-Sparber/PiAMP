@@ -1,8 +1,19 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    
     <ion-title>
       {{ deviceName | async }}
     </ion-title>
+
+    <ion-buttons slot="end" >
+      <ion-button fill="clear" (click)="refreshAllParameters()">
+        <ion-icon slot="icon-only" name="refresh"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+
   </ion-toolbar>
 </ion-header>
 
@@ -19,10 +30,14 @@
     <ion-item>
       <strong>{{parameterGroup.name}}</strong>
     </ion-item>
-    <app-parameter *ngFor="let parameter of parameterGroup.parameters" [parameter]="parameter" (valueChanged)="onValueChanged($event)"></app-parameter>
+    <app-parameter
+        *ngFor="let parameter of parameterGroup.parameters"
+        [parameter]="parameter"
+        (valueChanged)="onValueChanged($event)"
+        (refreshRequested)="refreshParameter($event)"></app-parameter>
   </ion-list>
   
-  <ion-accordion-group>
+  <ion-accordion-group (ionChange)="loadAdvancedParameters()">
     <ion-accordion value="first">
       <ion-item slot="header" color="light">
         <ion-label>Advanced</ion-label>
@@ -32,7 +47,11 @@
           <ion-item>
             <strong>{{parameterGroup.name}}</strong>
           </ion-item>
-          <app-parameter *ngFor="let parameter of parameterGroup.parameters" [parameter]="parameter" (valueChanged)="onValueChanged($event)"></app-parameter>
+          <app-parameter
+              *ngFor="let parameter of parameterGroup.parameters"
+              [parameter]="parameter"
+              (valueChanged)="onValueChanged($event)"
+              (refreshRequested)="refreshParameter($event)"></app-parameter>
         </ion-list>
       </div>
     </ion-accordion>

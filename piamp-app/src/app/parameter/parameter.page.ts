@@ -11,6 +11,7 @@ export class ParameterPage {
   @Input() parameter?: Parameter;
 
   @Output() valueChanged = new EventEmitter<Parameter>();
+  @Output() refreshRequested = new EventEmitter<Parameter>();
 
   onValueChanged(ev: Event, parameter: Parameter) {
     this.valueChanged.emit(parameter);
@@ -29,6 +30,7 @@ export class ParameterPage {
     }
 
     this.parameter!.value = listValues[index].id;
+    this.valueChanged.emit(this.parameter);
   }
 
   async previous() {
@@ -44,6 +46,11 @@ export class ParameterPage {
     }
 
     this.parameter!.value = listValues[index].id;
+    this.valueChanged.emit(this.parameter);
+  }
+
+  refresh() {
+    this.refreshRequested.emit(this.parameter);
   }
 
 }

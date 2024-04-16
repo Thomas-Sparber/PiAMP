@@ -5,5 +5,5 @@ export interface Parameter {
     label: string;
     value: number | string | boolean;
     type: "slider" | "dropdown" | "switch",
-    listValues?: Promise<IdName[]>;
+    listValues?: IdName[];
 }
