@@ -8,11 +8,14 @@ class Controls {
     currentModel = 0;
     currentIr = 0;
     getCallbacks;
+    updateParameterQueue;
+    updateTimer;
 
     constructor(serialUSB) {
         this.serialUSB = serialUSB;
         this.getCallbacks = {};
         this.paramChangedCallbacks = {};
+        this.updateParameterQueue = [];
     }
 
     start() {
@@ -126,6 +129,42 @@ class Controls {
             action: action,
             channel: channel
         });
+    }
+
+    setParameter(parameter, value) {
+        this.updateParameterQueue.push({ parameter: parameter, value: value });
+
+        var self = this;
+        clearTimeout(this.updateTimer);
+        this.updateTimer = setTimeout(function() { self.sendParametersInternal(); }, 0);
+    }
+
+    sendParametersInternal() {
+        var self = this;
+
+        this.updateParameterQueue.forEach(function(p) {
+            var parameter = p.parameter;
+            var value = p.value;
+
+            if(parameter == "Model") {
+                const models = self.getCallbacks["Model"]();
+                if(!models || models.length == 0)return;
+                self.currentModel = models.findIndex(function(m) { return m.id == value; });
+                self.serialUSB.send({ "action": "model", "id": models[self.currentModel].id, "name": models[self.currentModel].name, "image": models[self.currentModel].image });
+                console.log("Model sent to controls: " + models[self.currentModel].id);
+            } else if(parameter == "Ir") {
+                const irs = self.getCallbacks["Ir"]();
+                if(!irs || irs.length == 0)return;
+                self.currentIr = irs.findIndex(function(i) { return i.id == value });
+                self.serialUSB.send({ "action": "ir", "id": irs[self.currentIr].id, "name": irs[self.currentIr].name, "image": irs[self.currentIr].image });
+                console.log("Ir sent to controls: " + irs[self.currentIr].id);
+            } else {
+                self.serialUSB.send({ "action": parameter, "value": value });
+                console.log(parameter + " sent to controls: " + value);
+            }
+        });
+
+        this.updateParameterQueue = [];
     }
 
 }

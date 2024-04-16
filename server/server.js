@@ -40,16 +40,32 @@ serialusb.start();
 
 var imageReader = new ImageReader(imageFolder);
 
+var controls = new Controls(serialusb);
+controls.getImageCallback = function(name, x, y, w, h) {
+    return imageReader.getImageData(name, x, y, w, h);
+}
+controls.getCallbacks["Ir"] = getIrs;
+controls.getCallbacks["Model"] = getModels;
+["Model", "Ir"].forEach(function(param) {
+    controls.paramChangedCallbacks[param] = function(value) {
+        updateParameter(param, value, { notifyControls: false });
+    }
+});
 
 
 var tempParameters = {};
 var parameters = {};
 var channels = {};
 
-function updateParameter(parameter, value) {
+function updateParameter(parameter, value, notifyOptions) {
     if(parseFloat(value) == value) {
         value = parseFloat(value);
     }
+
+    oscClient.send("/parameter/NeuralPi/" + parameter, value, function() {
+        console.log("OSC " + parameter + " sent: " + value);
+        parameters[parameter] = value;
+    });
 
     if(!channels["current"]) {
         channels["current"] = {};
@@ -58,10 +74,9 @@ function updateParameter(parameter, value) {
     channels["current"][parameter] = value;
     saveChannels();
 
-    oscClient.send("/parameter/NeuralPi/" + parameter, value, function() {
-        console.log("OSC value sent");
-        parameters[parameter] = value;
-    });
+    if(!notifyOptions || notifyOptions.notifyControls !== false) {
+       controls.setParameter(parameter, value);
+    }
 }
 
 function getIrs() {
@@ -115,7 +130,7 @@ function getModels() {
 var bleClient = new BLE(deviceName);
 bleClient.start();
 bleClient.getParameterCallback = function(parameter) { return parameters[parameter]; };
-bleClient.updateParameterCallback = updateParameter;
+bleClient.updateParameterCallback = function(parameter, value) { updateParameter(parameter, value, { notifyBle: false }); };
 bleClient.getCallbacks["Ir"] = getIrs;
 bleClient.getCallbacks["Model"] = getModels;
 
@@ -204,18 +219,9 @@ footswitch.channelCallback = function(channel) { switchChannel(channel, { notify
 footswitch.channelSaveCallback = function(channel, isFX) { saveChannel(channel, isFX, { notifyFootswitch: false }); };
 
 
-var controls = new Controls(serialusb);
 controls.start();
-controls.getImageCallback = function(name, x, y, w, h) {
-    return imageReader.getImageData(name, x, y, w, h);
-}
-controls.getCallbacks["Ir"] = getIrs;
-controls.getCallbacks["Model"] = getModels;
-["Model", "Ir"].forEach(function(param) {
-    controls.paramChangedCallbacks[param] = function(value) {
-        updateParameter(param, value);
-    }
-});
+
+
 
 server.listen(port, function() {
     console.log('Http server started on port ' + port);
@@ -235,7 +241,7 @@ app.post("/api/parameter/:parameter", function(req, res) {
     const parameter = req.params.parameter;
     const value = req.body.value;
     console.log("Http new value for parameter " + parameter + ": ", req.body);
-    updateParameter(parameter, value);
+    updateParameter(parameter, value, { notifyWeb: false });
     res.send(JSON.stringify("OK"));
 });
 

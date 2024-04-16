@@ -44,7 +44,8 @@ class BLE {
         ReverbRoomSize: 0x001D,
         AmpState: 0x001E,
         LSTMState: 0x001F,
-        IrState: 0x0020
+        IrState: 0x0020,
+        Record: 0x0021
     };
 
     listCharacteristics = {
