@@ -1,3 +1,5 @@
+#pragma once
+
 #include "drawcommandrevalidate.h"
 
 #include "graphics.h"

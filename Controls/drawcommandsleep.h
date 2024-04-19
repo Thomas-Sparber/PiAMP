@@ -7,7 +7,7 @@ struct DrawCommandSleep : public DrawCommandHandler
   static DrawCommand* create(int milliseconds)
   {
     DrawCommand *command = DrawCommand::create(DrawCommandType::Sleep, 0, 0, 0, 0, 0, 0, 0, 0);
-    DrawCommandSleep *commandSleep = new DrawCommandSleep();
+    DrawCommandSleep *commandSleep = (DrawCommandSleep*)ReusableDrawCommands::get(DrawCommandType::Sleep);
     commandSleep->milliseconds = milliseconds;
     command->data = commandSleep;
     return command;

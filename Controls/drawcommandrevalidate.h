@@ -9,7 +9,7 @@ struct DrawCommandRevalidate : public DrawCommandHandler
   static DrawCommand* create(Graphics *graphics)
   {
     DrawCommand *command = DrawCommand::create(DrawCommandType::Revalidate, 0, 0, 0, 0, 0, 0, 0, 0);
-    DrawCommandRevalidate *commandRevalidate = new DrawCommandRevalidate();
+    DrawCommandRevalidate *commandRevalidate = (DrawCommandRevalidate*)ReusableDrawCommands::get(DrawCommandType::Revalidate);
     commandRevalidate->graphics = graphics;
     command->data = commandRevalidate;
     return command;

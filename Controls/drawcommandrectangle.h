@@ -7,7 +7,7 @@ struct DrawCommandRectangle : public DrawCommandHandler
   static DrawCommand* create(uint16_t x, uint16_t y, uint16_t w, uint16_t h, unsigned char r, unsigned char g, unsigned char b, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h)
   {
     DrawCommand *command = DrawCommand::create(DrawCommandType::Rectangle, x, y, w, h, draw_x, draw_y, draw_w, draw_h);
-    DrawCommandRectangle *commandRectangle = new DrawCommandRectangle();
+    DrawCommandRectangle *commandRectangle = (DrawCommandRectangle*)ReusableDrawCommands::get(DrawCommandType::Rectangle);
     commandRectangle->r = r;
     commandRectangle->g = g;
     commandRectangle->b = b;

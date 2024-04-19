@@ -12,12 +12,12 @@ public:
     valid(false)
   {}
 
-  bool isValid() const
+  virtual bool isValid() const
   {
     return valid;
   }
 
-  void revalidate()
+  virtual void revalidate()
   {
     valid = true;
   }
@@ -28,7 +28,7 @@ public:
 	drawCommands->add(cmd_revalidate);
   }
 
-  void invalidate()
+  virtual void invalidate()
   {
     valid = false;
   }

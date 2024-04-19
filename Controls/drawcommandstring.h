@@ -4,11 +4,11 @@
 
 struct DrawCommandString : public DrawCommandHandler
 {
-  static DrawCommand* create(String str)
+  static DrawCommand* create(const char *str)
   {
     DrawCommand *command = DrawCommand::create(DrawCommandType::String, 0, 0, 0, 0, 0, 0, 0, 0);
-    DrawCommandString *commandString = new DrawCommandString();
-    commandString->str = str;
+    DrawCommandString *commandString = (DrawCommandString*)ReusableDrawCommands::get(DrawCommandType::String);
+    snprintf(commandString->str, 256, "%s", str);
     command->data = commandString;
     return command;
   }
@@ -18,5 +18,5 @@ struct DrawCommandString : public DrawCommandHandler
     //nothing to do
   }
   
-  String str;
+  char str[256];
 };

@@ -8,25 +8,103 @@
 namespace Utils
 {
 
-void log(String l) {
-  Serial.println("{\"action\":\"log\",\"message\":\""+l+"\"}");
+struct TextPart
+{
+  TextPart()
+  {}
+  
+  TextPart(const char *t)
+  {
+    snprintf(text, 100, "%s", t);
+  }
+  
+  char text[100];
+};
+
+inline static char *ltrim(char *s)
+{
+    while(isspace(*s))s++;
+    return s;
 }
 
-LinkedList<String> splitText(const Font *font, String text, uint16_t cursor_x, uint16_t cursor_y, int maxLines, int maxWidth)
+inline static char *rtrim(char *s)
 {
-  LinkedList<String> parts;
+    char* back = s + strlen(s);
+    while(isspace(*--back));
+    *(back+1) = '\0';
+    return s;
+}
 
-  while(text != "")
+inline static char *trim(char *s)
+{
+    return rtrim(ltrim(s)); 
+}
+
+inline static void log(const char *a) {
+  char text[256];
+  snprintf(text, 256, "{\"action\":\"log\",\"message\":\"%s\"}", a);
+  Serial.println(text);
+}
+
+inline static void log(const char *a, const char *b) {
+  char text[256];
+  snprintf(text, 256, "{\"action\":\"log\",\"message\":\"%s%s\"}", a, b);
+  Serial.println(text);
+}
+
+inline static void log(int a, const char *b) {
+  char text[256];
+  snprintf(text, 256, "{\"action\":\"log\",\"message\":\"%d%s\"}", a, b);
+  Serial.println(text);
+}
+
+inline static void log(const char *a, int b) {
+  char text[256];
+  snprintf(text, 256, "{\"action\":\"log\",\"message\":\"%s%d\"}", a, b);
+  Serial.println(text);
+}
+
+inline static void log(const char *a, const char *b, const char *c) {
+  char text[256];
+  snprintf(text, 256, "{\"action\":\"log\",\"message\":\"%s%s%\"}", a, b, c);
+  Serial.println(text);
+}
+
+inline static int lastIndexOf(const char *text, char p, int index)
+{
+  while(index > 0)
   {
-    String part = text;
-    part.trim();
-    text = "";
+    if(text[index] == p)
+    {
+      break;
+    }
+
+    index--;
+  }
+
+  return index;
+}
+
+inline static LinkedList<TextPart> splitText(const Font *font, const char *toSplit, uint16_t cursor_x, uint16_t cursor_y, int maxLines, int maxWidth)
+{
+  LinkedList<TextPart> parts;
+
+  char tempText[256];
+  snprintf(tempText, 256, "%s", toSplit);
+  char *text = tempText;
+
+  while(strlen(text) != 0)
+  {
+    char tempPart[256];
+    snprintf(tempPart, 256, "%s", text);
+    char *part = trim(tempPart);
+    text[0] = '\0';
     
     uint16_t text_x;
     uint16_t text_y;
     uint16_t text_w;
     uint16_t text_h;
-    font->getTextBounds(part.c_str(), cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
+    font->getTextBounds(part, cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
 
     if(text_x + text_w <= maxWidth)
     {
@@ -36,31 +114,36 @@ LinkedList<String> splitText(const Font *font, String text, uint16_t cursor_x, u
 
     if(parts.size() >= maxLines - 1)
     {
+      char withDots[100];
+      
       do
       {
-        part = part.substring(0, part.length() - 1);
+        part[strlen(part) - 1] = '\0';
         
-        String withDots = part + "...";
+        snprintf(withDots, 100, "%s...", part);
   
-        font->getTextBounds(withDots.c_str(), cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
+        font->getTextBounds(withDots, cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
       }
       while(text_x + text_w > maxWidth);
       
-      parts.add(part + "...");
+      parts.add(withDots);
       continue;
     }
 
-    int index = part.length();
-    while((index = part.lastIndexOf(' ', index - 1)) != -1)
+    int index = strlen(part);
+    while((index = lastIndexOf(part, ' ', index - 1)) != -1)
     {
-      font->getTextBounds(part.c_str(), cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
+      char sub[100];
+      snprintf(sub, 100, "%s", part);
+      sub[index] = '\0';
+      font->getTextBounds(sub, cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
   
       if(text_x + text_w <= maxWidth)
       {
-        text = part.substring(index);
-        part = part.substring(0, index);
+        snprintf(tempText, 256, "%s", part + index);
+        text = tempText;
       
-        parts.add(part);
+        parts.add(sub);
         break;
       }
     }
@@ -69,10 +152,10 @@ LinkedList<String> splitText(const Font *font, String text, uint16_t cursor_x, u
 
     while(text_x + text_w > maxWidth)
     {
-      text = part.substring(part.length() - 1) + text;
-      part = part.substring(0, part.length() - 1);
+      snprintf(text, 256, "%s%s", part + strlen(part) - 1, text);
+      snprintf(part, min(256, strlen(part) - 1), "%s", part);
 
-      font->getTextBounds(part.c_str(), cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
+      font->getTextBounds(part, cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
     }
 
     parts.add(part);
@@ -81,7 +164,7 @@ LinkedList<String> splitText(const Font *font, String text, uint16_t cursor_x, u
   return parts;
 }
 
-int readSerialChar(int timeout=1000) {
+inline static int readSerialChar(int timeout=1000) {
   unsigned long startTime = millis();
   while(Serial.available() == 0) {
     delay(1);
@@ -100,22 +183,32 @@ int readSerialChar(int timeout=1000) {
   }
 }
 
-String readSerialLine(int timeout=1000) {
-  String temp;
+inline static void readSerialLine(char *currentCommand, int size, int timeout=1000) {
+  int currentPosition = 0;
+  
   unsigned long startTime = millis();
   while(true) {
     while(Serial.available() == 0) {
       delay(1);
   
-      if(millis() >= startTime + timeout)break;
+      if(millis() >= startTime + timeout)
+      {
+        Utils::log("Read timeout");
+        return currentCommand;
+      }
     }
   
     while(Serial.available() > 0) {
       int b = Serial.read();
-      temp += (char)b;
-  
+
       if(b == '\n') {
-        return temp;
+        currentCommand[currentPosition] = '\0';
+        return currentCommand;
+      }
+
+      if(currentPosition < size)
+      {
+        currentCommand[currentPosition++] = (char)b;
       }
     }
   }

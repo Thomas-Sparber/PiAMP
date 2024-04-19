@@ -32,25 +32,25 @@ public:
     textToClear()
   {}
 
-  String getText() const
+  const char* getText() const
   {
     return text;
   }
 
-  void setText(const String &s_text)
+  void setText(const char *s_text)
   {
-    if(text != s_text)
-	{
-      text = s_text;
+    if(strncmp(text, s_text, 50) != 0)
+	  {
+      snprintf(text, 50, "%s", s_text);
       invalidate();
     }
   }
 
-  void setImageStr(const String &s_imageStr)
+  void setImageStr(const char *s_imageStr)
   {
-    if(imageStr != s_imageStr)
+    if(strncmp(imageStr, s_imageStr, 50) != 0)
     {
-      imageStr = s_imageStr;
+      snprintf(imageStr, 50, "%s", s_imageStr);
       invalidate();
     }
   }
@@ -86,19 +86,19 @@ public:
     }
   }
 
-  static LinkedList<String> doPrecalculation(Font *font, String text, uint16_t offset_y, uint16_t displayWidth, uint16_t displayHeight, uint16_t &cursor_x, uint16_t &cursor_y, uint16_t &text_x, uint16_t &text_y, uint16_t &text_w, uint16_t &text_h, uint16_t &max_w, uint16_t &max_h)
+  static LinkedList<Utils::TextPart> doPrecalculation(Font *font, const char *text, uint16_t offset_y, uint16_t displayWidth, uint16_t displayHeight, uint16_t &cursor_x, uint16_t &cursor_y, uint16_t &text_x, uint16_t &text_y, uint16_t &text_w, uint16_t &text_h, uint16_t &max_w, uint16_t &max_h)
   {
     cursor_x = 100;
     cursor_y = offset_y + 100;
   
-    LinkedList<String> texts = Utils::splitText(font, text, cursor_x, cursor_y, MAXLINES, displayWidth);
+    LinkedList<Utils::TextPart> texts = Utils::splitText(font, text, cursor_x, cursor_y, MAXLINES, displayWidth);
 
     max_w = 0;
     max_h = 0;
     for(int i = 0; i < texts.size(); i++)
     {
-      String str = texts.get(i);
-      font->getTextBounds(str.c_str(), cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
+      Utils::TextPart str = texts.get(i);
+      font->getTextBounds(str.text, cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
   
       max_w = max(max_w, text_w);
       max_h = max(max_h, text_h);
@@ -125,7 +125,7 @@ public:
 
   virtual void createDrawCommands(LinkedList<DrawCommand*> *drawCommands, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h, uint16_t displayWidth, uint16_t displayHeight) override
   {
-    if(text == "" && imageStr == "")return;
+    if(strlen(text) == 0 && strlen(imageStr) == 0)return;
 
     uint16_t cursor_x;
     uint16_t cursor_y;
@@ -136,14 +136,14 @@ public:
     uint16_t max_w;
     uint16_t max_h;
   
-    LinkedList<String> texts = GraphicsTextAndImage::doPrecalculation(font, text, offset_y, displayWidth, displayHeight, cursor_x, cursor_y, text_x, text_y, text_w, text_h, max_w, max_h);
+    LinkedList<Utils::TextPart> texts = GraphicsTextAndImage::doPrecalculation(font, text, offset_y, displayWidth, displayHeight, cursor_x, cursor_y, text_x, text_y, text_w, text_h, max_w, max_h);
 
     DrawCommand *cmd_str = DrawCommandString::create(imageStr);
 
-    String *image = &((DrawCommandString*)(cmd_str->data))->str;
+    const char *image = ((DrawCommandString*)(cmd_str->data))->str;
 
     if(text_x < draw_x + draw_w && draw_x < text_x + text_w && draw_y < text_y + text_h && text_y < draw_y + draw_h) {
-      if(textToClear != "" && textToClear != text)
+      if(strlen(textToClear) != 0 && strncmp(textToClear, text, 50) != 0)
       {
         uint16_t old_cursor_x;
         uint16_t old_cursor_y;
@@ -154,26 +154,26 @@ public:
         uint16_t old_max_w;
         uint16_t old_max_h;
       
-        LinkedList<String> oldTexts = GraphicsTextAndImage::doPrecalculation(font, textToClear, offset_y, displayWidth, displayHeight, old_cursor_x, old_cursor_y, old_text_x, old_text_y, old_text_w, old_text_h, old_max_w, old_max_h);
+        LinkedList<Utils::TextPart> oldTexts = GraphicsTextAndImage::doPrecalculation(font, textToClear, offset_y, displayWidth, displayHeight, old_cursor_x, old_cursor_y, old_text_x, old_text_y, old_text_w, old_text_h, old_max_w, old_max_h);
 
         for(int i = 0; i < oldTexts.size(); i++)
         {
-          String str = oldTexts.get(i);
+          Utils::TextPart str = oldTexts.get(i);
           const uint16_t cx = old_cursor_x;
           const uint16_t cy = old_cursor_y - old_max_h * (oldTexts.size()-1) /  (MAXLINES-1) + (old_max_h + BORDERSIZE * 2) * i;
-          drawCommands->add(DrawCommandText::create(0, 0, 0, 0, cx, cy, background_r, background_g, background_b, str, draw_x, draw_y, draw_w, draw_h));
+          drawCommands->add(DrawCommandText::create(0, 0, 0, 0, cx, cy, background_r, background_g, background_b, str.text, draw_x, draw_y, draw_w, draw_h));
         }
 
         for(int i = 0; i < texts.size(); i++)
         {
-          String str = texts.get(i);
+          Utils::TextPart str = texts.get(i);
           const uint16_t x = text_x;
           const uint16_t y = text_y + (max_h + BORDERSIZE * 2) * i;
           const uint16_t w = max_w + BORDERSIZE * 2;
           const uint16_t h = max_h + BORDERSIZE * 2;
           const uint16_t cx = cursor_x;
           const uint16_t cy = cursor_y - max_h * (texts.size()-1) /  (MAXLINES-1) + (max_h + BORDERSIZE * 2) * i;
-          drawCommands->add(DrawCommandText::create(x, y, w, h, cx, cy, text_r, text_g, text_b, str, draw_x, draw_y, draw_w, draw_h));
+          drawCommands->add(DrawCommandText::create(x, y, w, h, cx, cy, text_r, text_g, text_b, str.text, draw_x, draw_y, draw_w, draw_h));
         }
     
         drawCommands->add(DrawCommandSleep::create(2000));
@@ -181,28 +181,28 @@ public:
     
       for(int i = 0; i < texts.size(); i++)
       {
-        String str = texts.get(i);
+        Utils::TextPart str = texts.get(i);
         const uint16_t x = text_x;
         const uint16_t y = text_y + (max_h + BORDERSIZE * 2) * i;
         const uint16_t w = max_w + BORDERSIZE * 2;
         const uint16_t h = max_h + BORDERSIZE * 2;
         const uint16_t cx = cursor_x;
         const uint16_t cy = cursor_y - max_h * (texts.size()-1) /  (MAXLINES-1) + (max_h + BORDERSIZE * 2) * i;
-        drawCommands->add(DrawCommandTextWithImageBackground::create(x, y, w, h, cx, cy, text_r, text_g, text_b, str, offset_y, image, background_r, background_g, background_b, BORDERSIZE, draw_x, draw_y, draw_w, draw_h));
+        drawCommands->add(DrawCommandTextWithImageBackground::create(x, y, w, h, cx, cy, text_r, text_g, text_b, str.text, offset_y, image, background_r, background_g, background_b, BORDERSIZE, draw_x, draw_y, draw_w, draw_h));
       }
     }
 
     drawCommands->add(cmd_str);
 
-    textToClear = text;
+    snprintf(textToClear, 50, "%s", text);
 
     revalidateUsingDrawCommand(drawCommands);
   }
 
 private:
   Font *font;
-  String text;
-  String imageStr;
+  char text[50];
+  char imageStr[50];
   uint16_t offset_y;
   unsigned char background_r;
   unsigned char background_g;
@@ -210,6 +210,6 @@ private:
   unsigned char text_r;
   unsigned char text_g;
   unsigned char text_b;
-  String textToClear;
+  char textToClear[50];
 
 }; //end class GraphicsTextAndImage

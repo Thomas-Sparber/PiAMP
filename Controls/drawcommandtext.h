@@ -4,16 +4,16 @@
 
 struct DrawCommandText : public DrawCommandHandler
 {
-  static DrawCommand* create(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t cursor_x, uint16_t cursor_y, unsigned char r, unsigned char g, unsigned char b, String text, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h)
+  static DrawCommand* create(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t cursor_x, uint16_t cursor_y, unsigned char r, unsigned char g, unsigned char b, const char *text, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h)
   {
     DrawCommand *command = DrawCommand::create(DrawCommandType::Text, x, y, w, h, draw_x, draw_y, draw_w, draw_h);
-    DrawCommandText *commandText = new DrawCommandText();
+    DrawCommandText *commandText = (DrawCommandText*)ReusableDrawCommands::get(DrawCommandType::Text);
     commandText->cursor_x = cursor_x;
     commandText->cursor_y = cursor_y;
     commandText->r = r;
     commandText->g = g;
     commandText->b = b;
-    commandText->text = text;
+    snprintf(commandText->text, 50, "%s", text);
     command->data = commandText;
     return command;
   }
@@ -31,5 +31,5 @@ struct DrawCommandText : public DrawCommandHandler
   unsigned char r;
   unsigned char g;
   unsigned char b;
-  String text;
+  char text[50];
 };

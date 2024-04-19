@@ -24,25 +24,25 @@ public:
     margin()
   {}
 
-  String getText() const
+  const char* getText() const
   {
     return text;
   }
 
-  void setText(const String &s_text)
+  void setText(const char *s_text)
   {
-    if(text != s_text)
-	{
-      text = s_text;
+    if(strncmp(text, s_text, 50) != 0)
+	  {
+      snprintf(text, 50, "%s", s_text);
       invalidate();
     }
   }
 
-  void setImageStr(const String &s_imageStr)
+  void setImageStr(const char *s_imageStr)
   {
-    if(imageStr != s_imageStr)
+    if(strncmp(imageStr, s_imageStr, 50) != 0)
     {
-      imageStr = s_imageStr;
+      snprintf(imageStr, 50, "%s", s_imageStr);
       invalidate();
     }
   }
@@ -89,7 +89,7 @@ public:
 
     DrawCommand *cmd_str = DrawCommandString::create(imageStr);
 
-    String *image = &((DrawCommandString*)(cmd_str->data))->str;
+    const char *image = ((DrawCommandString*)(cmd_str->data))->str;
   
     for(int x = 0; x < IMAGE_WIDTH; x += BLOCKSIZE_X) {
       for(int y = offset_y; y < offset_y+IMAGE_HEIGHT; y += BLOCKSIZE_Y) {
@@ -152,8 +152,8 @@ public:
 
 private:
   Font *font;
-  String text;
-  String imageStr;
+  char text[50];
+  char imageStr[50];
   uint16_t offset_y;
   uint16_t margin;
 

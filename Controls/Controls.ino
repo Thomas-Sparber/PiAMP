@@ -9,8 +9,11 @@
 #include "drawcommand.h"
 #include "font.h"
 #include "Fonts/FreeSansBold18pt7b.h"
+#include "graphicsbackground.h"
 #include "graphicsborder.h"
 #include "graphicsimagewithouttext.h"
+#include "graphicsliststatic.h"
+#include "graphicsliststreaming.h"
 #include "graphicstextandimage.h"
 #include "utils.h"
 
@@ -27,26 +30,62 @@
 #define LOADING_CIRCLE_RADIUS 30
 #define BORDER_THICKNESS 4
 
+#define MODEL_ID "Model"
+#define IR_ID "Ir"
+
 enum class Selection
 {
   Model,
-  Ir
+  Ir,
+  ModelIrList,
+  ModelList,
+  IrList
 };
 
-
+struct Command
+{
+  Command()
+  {}
+  
+  Command(const char *data)
+  {
+    int written = snprintf(command, 256, "%s", data);
+    if(written < 0 || written >= 256)Utils::log("Command string concat problem");
+  }
+  
+  Command(const char *a, int b, const char *c)
+  {
+    int written = snprintf(command, 256, "%s%d%s", a, b, c);
+    if(written < 0 || written >= 256)Utils::log("Command string concat problem");
+  }
+  
+  Command(const char *a, const char *b, const char *c)
+  {
+    int written = snprintf(command, 256, "%s%s%s", a, b, c);
+    if(written < 0 || written >= 256)Utils::log("Command string concat problem");
+  }
+  
+  char command[256];
+};
 
 LCDWIKI_KBV mylcd(ILI9486,A3,A2,A1,A0,A4); //model,cs,cd,wr,rd,reset
 
 LinkedList<Graphics*> drawQueue;
 LinkedList<DrawCommand*> drawCommands;
-LinkedList<String> serialCommands;
+LinkedList<Command> serialCommands;
 Font font(&drawPixel, &drawRect);
+
 GraphicsBorder modelBorder;
 GraphicsBorder irBorder;
 GraphicsTextAndImage modelGraphics(&font);
 GraphicsTextAndImage irGraphics(&font);
 GraphicsImageWithoutText modelBackgroundGraphics(&font);
 GraphicsImageWithoutText irBackgroundGraphics(&font);
+
+GraphicsListStatic modelIrList(&font);
+GraphicsListStreaming modelList(&font, "getmodels");
+GraphicsListStreaming irList(&font, "getirs");
+
 RotaryEncoder encoder(SWITCH_DT, SWITCH_CLK, RotaryEncoder::LatchMode::FOUR3);
 volatile bool pi_available;
 volatile unsigned long last_pi_response;
@@ -85,16 +124,7 @@ void repaint(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
   const unsigned char nonselected_text_color_b = 200;
 
   modelBorder.setOutset(currentSelection == Selection::Model);
-  modelBorder.createDrawCommands(&drawCommands, x, y, w, h, mylcd.Get_Display_Width(), mylcd.Get_Display_Height());
   irBorder.setOutset(currentSelection == Selection::Ir);
-  irBorder.createDrawCommands(&drawCommands, x, y, w, h, mylcd.Get_Display_Width(), mylcd.Get_Display_Height());
-  
-    /*uint16_t draw_x = max(x, BORDER_THICKNESS);
-    uint16_t draw_y = max(y, BORDER_THICKNESS);
-    uint16_t draw_w = w - (draw_x - x);
-    uint16_t draw_h = h - (draw_y - y);
-    if(draw_x+draw_w > mylcd.Get_Display_Width()-BORDER_THICKNESS)draw_w -= (draw_x+draw_w) - (mylcd.Get_Display_Width()-BORDER_THICKNESS);
-    if(draw_y+draw_h > mylcd.Get_Display_Height()/2 - BORDER_THICKNESS)draw_h -= (draw_y+draw_h) - (mylcd.Get_Display_Height()/2 - BORDER_THICKNESS);*/
 
   modelGraphics.setBackgroundColor(
     (currentSelection == Selection::Model) ? selected_background_color_r : nonselected_background_color_r,
@@ -106,13 +136,6 @@ void repaint(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     (currentSelection == Selection::Model) ? selected_text_color_g : nonselected_text_color_g,
     (currentSelection == Selection::Model) ? selected_text_color_b : nonselected_text_color_b
   );
-
-    /*uint16_t draw_x = max(x, BORDER_THICKNESS);
-    uint16_t draw_y = max(y, 240 + BORDER_THICKNESS);
-    uint16_t draw_w = w - (draw_x - x);
-    uint16_t draw_h = h - (draw_y - y);
-    if(draw_x+draw_w > mylcd.Get_Display_Width()-BORDER_THICKNESS)draw_w -= (draw_x+draw_w) - (mylcd.Get_Display_Width()-BORDER_THICKNESS);
-    if(draw_y+draw_h > mylcd.Get_Display_Height() - BORDER_THICKNESS)draw_h -= (draw_y+draw_h) - (mylcd.Get_Display_Height() - BORDER_THICKNESS);*/
   
   irGraphics.setBackgroundColor(
     (currentSelection == Selection::Ir) ? selected_background_color_r : nonselected_background_color_r,
@@ -134,7 +157,7 @@ void repaint(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     }
   }
   
-  Utils::log(String() + drawCommands.size() + " draw commands");
+  Utils::log(drawCommands.size() + " draw commands");
 }
 
 void repaint()
@@ -156,6 +179,35 @@ void repaintAll(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 void repaintAll()
 {
   repaintAll(0, 0, mylcd.Get_Display_Width(), mylcd.Get_Display_Height());
+}
+
+void readCurrentModelIr(const char *action, char *id, int idLength, char *name, int nameLength, char *image, int imageLength)
+{
+  char command[256];
+  snprintf(command, 256, "{\"action\":\"%s\"}", action);
+  Serial.println(command);
+  Utils::readSerialLine(command, 256);
+  
+  JsonDocument doc;
+  deserializeJson(doc, command);
+
+  if(id)
+  {
+    const char *tempId = doc["id"];
+    snprintf(id, idLength, "%s", tempId);
+  }
+
+  if(name)
+  {
+    const char *tempName = doc["name"];
+    snprintf(name, nameLength, "%s", tempName);
+  }
+
+  if(image)
+  {
+    const char *tempImage = doc["image"];
+    snprintf(image, imageLength, "%s", tempImage);
+  }
 }
 
 void setupScreen()
@@ -191,6 +243,55 @@ void setupScreen()
     drawQueue.add(&modelBackgroundGraphics);
     drawQueue.add(&irBackgroundGraphics);
   }
+
+  if(currentSelection == Selection:: ModelIrList)
+  {
+    modelIrList.clearList();
+    modelIrList.setX(0);
+    modelIrList.setX(0);
+    modelIrList.setW(mylcd.Get_Display_Width());
+    modelIrList.setH(mylcd.Get_Display_Height());
+    modelIrList.setSelectedColor(95, 5, 32);
+    modelIrList.setBackgroundColor(0, 0, 0);
+    modelIrList.setTextColor(255, 255, 255);
+    modelIrList.addEntry(MODEL_ID, "Model");
+    modelIrList.addEntry(IR_ID, "Impulse Response");
+    modelIrList.setCurrentSelection(0);
+    
+    drawQueue.add(&modelIrList);
+  }
+  
+  if(currentSelection == Selection:: ModelList)
+  {
+    modelList.setX(0);
+    modelList.setX(0);
+    modelList.setW(mylcd.Get_Display_Width());
+    modelList.setH(mylcd.Get_Display_Height());
+    modelList.setSelectedColor(95, 5, 32);
+    modelList.setBackgroundColor(0, 0, 0);
+    modelList.setTextColor(255, 255, 255);
+    char id[100];
+    readCurrentModelIr("getmodel", id, 100, NULL, 0, NULL, 0);
+    modelList.setCurrentId(id);
+    
+    drawQueue.add(&modelList);
+  }
+  
+  if(currentSelection == Selection:: IrList)
+  {
+    irList.setX(0);
+    irList.setX(0);
+    irList.setW(mylcd.Get_Display_Width());
+    irList.setH(mylcd.Get_Display_Height());
+    irList.setSelectedColor(95, 5, 32);
+    irList.setBackgroundColor(0, 0, 0);
+    irList.setTextColor(255, 255, 255);
+    char id[100];
+    readCurrentModelIr("getir", id, 100, NULL, 100, NULL, 100);
+    irList.setCurrentId(id);
+    
+    drawQueue.add(&irList);
+  }
 }
 
 void setup() 
@@ -211,13 +312,15 @@ void setup()
   setupScreen();
 }
 
-void handleCommand(String command) {
+void handleCommand(const char *command) {
   JsonDocument doc;
   deserializeJson(doc, command);
 
-  String action = doc["action"];
+  const char *action = doc["action"];
 
-  if(action == "pong")
+  //if(strcmp(action, "pong") != 0 && strcmp(action, "null") != 0 && strcmp(action, "") != 0)Utils::log("New command " ,action);
+  
+  if(strcmp(action, "pong") == 0)
   {
     last_pi_response = millis();
     if(!pi_available)Utils::log("Pi online");
@@ -233,58 +336,88 @@ void handleCommand(String command) {
     }
   }
 
-  if(action == "model")
+  if(strcmp(action, "model") == 0)
   {
     modelLoaded = true;
-    String tempModel = doc["name"];
-    String tempImage = doc["image"];
+    const char *tempId = doc["id"];
+    const char *tempModel = doc["name"];
+    const char *tempImage = doc["image"];
     modelGraphics.setText(tempModel);
     modelBackgroundGraphics.setText(tempModel);
     modelGraphics.setImageStr(tempImage);
     modelBackgroundGraphics.setImageStr(tempImage);
-    Utils::log("New model loaded: " + tempModel);
+    modelList.setCurrentId(tempId);
+    Utils::log("New model loaded: ", tempModel);
     clearDrawCommands();
+    addDrawCommandSleep(100);
     repaint();
   }
 
-  if(action == "ir")
+  if(strcmp(action, "ir") == 0)
   {
     irLoaded = true;
-    String tempIr = doc["name"];
-    String tempImage = doc["image"];
+    const char *tempId = doc["id"];
+    const char *tempIr = doc["name"];
+    const char *tempImage = doc["image"];
     irGraphics.setText(tempIr);
     irBackgroundGraphics.setText(tempIr);
     irGraphics.setImageStr(tempImage);
     irBackgroundGraphics.setImageStr(tempImage);
-    Utils::log("New ir loaded: " + tempIr);
+    irList.setCurrentId(tempId);
+    Utils::log("New ir loaded: ", tempIr);
     clearDrawCommands();
+    addDrawCommandSleep(100);
     repaint();
   }
 }
 
 void handleSerial() {
-  while(serialCommands.size() != 0)
+  bool waitingResponse = false;
+  if(serialCommands.size() != 0)
   {
-    String command = serialCommands.shift();
-    Serial.println(command);
+    const Command command = serialCommands.shift();
+    Serial.println(command.command);
+    waitingResponse = true;
+  }
+  else if(pi_available)
+  {
+    Serial.println("{\"action\":\"getcommands\"}");
+    waitingResponse = true;
   }
 
   static char currentCommand[256];
   static int currentPosition = 0;
+
+  const int timeout = 500;
+  unsigned long startTime = millis();
   
-  while(Serial.available() > 0) {
-    last_pi_response = millis();
-    int b = Serial.read();
-    currentCommand[currentPosition++] = (char)b;
-
-    if(currentPosition == 256)currentPosition = 0;
-
-    if(b == '\n') {
-      currentCommand[currentPosition] = '\0';
-      currentPosition = 0;
-      handleCommand(currentCommand);
+  do {
+    while(waitingResponse && Serial.available() == 0) {
+      delay(1);
+  
+      if(millis() >= startTime + timeout)
+      {
+        Utils::log("Read timeout");
+        return currentCommand;
+      }
+    }
+    
+    while(Serial.available() > 0) {
+      last_pi_response = millis();
+      int b = Serial.read();
+      currentCommand[currentPosition++] = (char)b;
+  
+      if(currentPosition == 256)currentPosition = 0;
+  
+      if(b == '\n') {
+        currentCommand[currentPosition] = '\0';
+        currentPosition = 0;
+        handleCommand(currentCommand);
+        waitingResponse = false;
+      }
     }
   }
+  while(waitingResponse);
 }
 
 void handleDrawCommands(int diff)
@@ -300,8 +433,8 @@ void handleDrawCommands(int diff)
     
     const DrawCommand *command = drawCommands.shift();
     command->data->handle(&mylcd, &font, command->x, command->y, command->w, command->h);
-    delete command->data;
-    delete command;
+    ReusableDrawCommands::put(command->type, command->data);
+    ReusableDrawCommands::put(command);
 
     last_pi_response = millis();
     
@@ -312,13 +445,25 @@ void handleDrawCommands(int diff)
 void changeModel(int diff)
 {
   clearDrawCommands();
-  serialCommands.add(String() + "{\"action\":\"modelchange\",\"value\":"+diff+"}");
+  serialCommands.add(Command("{\"action\":\"modelchange\",\"value\":",diff,"}"));
+}
+
+void changeModel(const char *model)
+{
+  clearDrawCommands();
+  serialCommands.add(Command("{\"action\":\"modelchange\",\"model\":\"",model,"\"}"));
 }
 
 void changeIr(int diff)
 {
   clearDrawCommands();
-  serialCommands.add(String() + "{\"action\":\"irchange\",\"value\":"+diff+"}");
+  serialCommands.add(Command("{\"action\":\"irchange\",\"value\":",diff,"}"));
+}
+
+void changeIr(const char *ir)
+{
+  clearDrawCommands();
+  serialCommands.add(Command("{\"action\":\"irchange\",\"ir\":\"",ir,"\"}"));
 }
 
 void handleEncoder()
@@ -339,8 +484,26 @@ void handleEncoder()
     {
       changeIr(diff);
     }
+    else if(currentSelection == Selection::ModelIrList)
+    {
+      clearDrawCommands();
+      modelIrList.incrementCurrentSelection(diff);
+      repaint();
+    }
+    else if(currentSelection == Selection::ModelList)
+    {
+      clearDrawCommands();
+      modelList.incrementCurrentSelection(diff);
+      repaint();
+    }
+    else if(currentSelection == Selection::IrList)
+    {
+      clearDrawCommands();
+      irList.incrementCurrentSelection(diff);
+      repaint();
+    }
     oldPosition = newPosition;
-    Utils::log(String() + "Encoder: " + diff);
+    Utils::log("Encoder: " + diff);
   }
 
   if(encoderPressed)
@@ -350,12 +513,63 @@ void handleEncoder()
     if(currentSelection == Selection::Model)
     {
       currentSelection = Selection::Ir;
+      clearDrawCommands();
       repaint();
     }
     else if(currentSelection == Selection::Ir)
     {
-      currentSelection = Selection::Model;
-      repaint();
+      currentSelection = Selection::ModelIrList;
+      mylcd.Fill_Screen(0x0000);
+      setupScreen();
+      clearDrawCommands();
+      repaintAll();
+    }
+    else if(currentSelection == Selection::ModelIrList)
+    {
+      const char *selected = modelIrList.getCurrentId();
+      if(strcmp(selected, MODEL_ID) == 0)
+        currentSelection = Selection::ModelList;
+      else
+        currentSelection = Selection::IrList;
+        
+      mylcd.Fill_Screen(0x0000);
+      setupScreen();
+      clearDrawCommands();
+      repaintAll();
+    }
+    else if(currentSelection == Selection::ModelList)
+    {
+      char id[100];
+      readCurrentModelIr("getmodel", id, 100, NULL, 0, NULL, 0);
+      if(id != modelList.getCurrentId())
+      {
+        changeModel(modelList.getCurrentId());
+      }
+      else
+      {
+        currentSelection = Selection::Model;
+        mylcd.Fill_Screen(0x0000);
+        setupScreen();
+        clearDrawCommands();
+        repaintAll();
+      }
+    }
+    else if(currentSelection == Selection::IrList)
+    {
+      char id[100];
+      readCurrentModelIr("getir", id, 100, NULL, 0, NULL, 0);
+      if(id != irList.getCurrentId())
+      {
+        changeIr(irList.getCurrentId());
+      }
+      else
+      {
+        currentSelection = Selection::Model;
+        mylcd.Fill_Screen(0x0000);
+        setupScreen();
+        clearDrawCommands();
+        repaintAll();
+      }
     }
   }
 }
@@ -390,7 +604,7 @@ void checkFreeMem() {
 
   if(currentTime - lastPrint > 1000)
   {
-    //Utils::log(String("Free mem ") + freeRam());
+    Utils::log("Free mem ", freeRam());
     lastPrint = currentTime;
   }
 }
@@ -400,11 +614,24 @@ void clearDrawCommands()
   while(drawCommands.size() != 0)
   {
     const DrawCommand *command = drawCommands.shift();
-    delete command->data;
-    delete command;
+    ReusableDrawCommands::put(command->type, command->data);
+    ReusableDrawCommands::put(command);
   }
 
   Utils::log("Draw commands cleared");
+}
+
+void addDrawCommandSleep(int ms)
+{
+  if(drawCommands.size() != 0 && drawCommands.get(0)->type == DrawCommandType::Sleep)
+  {
+    DrawCommandSleep *s = drawCommands.get(0)->data;
+    s->milliseconds = ms;
+  }
+  else
+  {
+    drawCommands.add(DrawCommandSleep::create(ms));
+  }
 }
 
 void showLoading() {
@@ -447,6 +674,9 @@ void loop()
   lastTime = currentTime;
   
   handleEncoder();
+  handleSerial();
+  handlePing();
+  checkFreeMem();
 
   if(pi_available)
   {
@@ -462,10 +692,6 @@ void loop()
     showLoading();
   }
   last_pi_available = pi_available;
-
-  handleSerial();
-  handlePing();
-  checkFreeMem();
 }
 
 void encoderInterrupt()
