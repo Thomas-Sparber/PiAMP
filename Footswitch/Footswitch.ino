@@ -176,6 +176,7 @@ bool handleChannel(Channel &ch, int diffMillis, int currentTimeMillis) {
       }
 
       //restore save state
+      
       if(ch.state != ch.saveState) {
         ch.state = ch.saveState;
 
