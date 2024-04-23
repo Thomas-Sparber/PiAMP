@@ -4,7 +4,7 @@
 
 struct DrawCommandTextWithImageBackground : public DrawCommandHandler
 {
-  static DrawCommand* create(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t cursor_x, uint16_t cursor_y, unsigned char text_r, unsigned char text_g, unsigned char text_b, const char *text, uint16_t image_offset_y, const char *image, unsigned char background_r, unsigned char background_g, unsigned char background_b, char border_size, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h)
+  static DrawCommand* create(int16_t x, int16_t y, uint16_t w, uint16_t h, int16_t cursor_x, int16_t cursor_y, unsigned char text_r, unsigned char text_g, unsigned char text_b, const String &text, int16_t image_offset_y, const String *image, unsigned char background_r, unsigned char background_g, unsigned char background_b, char border_size, int16_t draw_x, int16_t draw_y, uint16_t draw_w, uint16_t draw_h)
   {
     DrawCommand *command = DrawCommand::create(DrawCommandType::TextWithImageBackground, x, y, w, h, draw_x, draw_y, draw_w, draw_h);
     DrawCommandTextWithImageBackground *commandImageText = (DrawCommandTextWithImageBackground*)ReusableDrawCommands::get(DrawCommandType::TextWithImageBackground);
@@ -13,7 +13,7 @@ struct DrawCommandTextWithImageBackground : public DrawCommandHandler
     commandImageText->text_r = text_r;
     commandImageText->text_g = text_g;
     commandImageText->text_b = text_b;
-    snprintf(commandImageText->text, 50, "%s", text);
+    commandImageText->text = text;
     commandImageText->image_offset_y = image_offset_y;
     commandImageText->image = image;
     commandImageText->background_r = background_r;
@@ -24,27 +24,27 @@ struct DrawCommandTextWithImageBackground : public DrawCommandHandler
     return command;
   }
 
-  virtual void handle(LCDWIKI_KBV *mylcd, Font *font, uint16_t x, uint16_t y, uint16_t w, uint16_t h) override
+  virtual void handle(LCDWIKI_KBV *mylcd, Font *font, int16_t x, int16_t y, uint16_t w, uint16_t h) override
   {
     const int border_size_2 = border_size * 2;
 
     char command[256];
-    snprintf(command, 256, "{\"action\":\"getImage\",\"image\":\"%s\",\"x\":%d,\"y\":%d,\"w\":%d,\"h\":%d}", image, x, y-image_offset_y, w, h);
+    snprintf(command, 256, "{\"action\":\"getImage\",\"image\":\"%s\",\"x\":%d,\"y\":%d,\"w\":%d,\"h\":%d}", image->c_str(), x, y-image_offset_y, w, h);
     Serial.println(command);
 
     uint16_t pixels[w];
     
-    for(int y_counter = y; y_counter < y+h; y_counter++) {
-      const int minBorderY = min(
-        y_counter + 1 - y,
+    for(int16_t y_counter = y; y_counter < y+static_cast<int32_t>(h); y_counter++) {
+      const uint16_t minBorderY = min(
+        static_cast<uint16_t>(y_counter + 1 - y),
         y+h - y_counter
       );
         
-      for(int x_counter = x; x_counter < x+w; x_counter++) {
+      for(int16_t x_counter = x; x_counter < x+static_cast<int32_t>(w); x_counter++) {
         int minBorderDistance = min(
           minBorderY,
           min(
-            x_counter + 1 - x,
+            static_cast<uint16_t>(x_counter + 1 - x),
             x+w - x_counter
           )
         );
@@ -78,14 +78,14 @@ struct DrawCommandTextWithImageBackground : public DrawCommandHandler
     font->print(text);
   }
   
-  uint16_t cursor_x;
-  uint16_t cursor_y;
+  int16_t cursor_x;
+  int16_t cursor_y;
   unsigned char text_r;
   unsigned char text_g;
   unsigned char text_b;
-  char text[50];
-  uint16_t image_offset_y;
-  const char *image;
+  String text;
+  int16_t image_offset_y;
+  const String *image;
   unsigned char background_r;
   unsigned char background_g;
   unsigned char background_b;

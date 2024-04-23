@@ -9,8 +9,8 @@
 #include "graphicstextandimage.h"
 #include "utils.h"
 
-#define BLOCKSIZE_X 64
-#define BLOCKSIZE_Y 48
+#define BLOCKSIZE_X 80
+#define BLOCKSIZE_Y 60
 
 class GraphicsImageWithoutText : public Graphics
 {
@@ -24,30 +24,30 @@ public:
     margin()
   {}
 
-  const char* getText() const
+  const String& getText() const
   {
     return text;
   }
 
-  void setText(const char *s_text)
+  void setText(const String &s_text)
   {
-    if(strncmp(text, s_text, 50) != 0)
+    if(text != s_text)
 	  {
-      snprintf(text, 50, "%s", s_text);
+      text = s_text;
       invalidate();
     }
   }
 
-  void setImageStr(const char *s_imageStr)
+  void setImageStr(const String &s_imageStr)
   {
-    if(strncmp(imageStr, s_imageStr, 50) != 0)
+    if(imageStr != s_imageStr)
     {
-      snprintf(imageStr, 50, "%s", s_imageStr);
+      imageStr = s_imageStr;
       invalidate();
     }
   }
 
-  void setOffsetY(uint16_t ui_offset_y)
+  void setOffsetY(int16_t ui_offset_y)
   {
     if(offset_y != ui_offset_y)
     {
@@ -69,17 +69,17 @@ public:
   {
     if(text == "" && imageStr == "")return;
 
-    uint16_t draw_x = max(x, margin);
-    uint16_t draw_y = max(y, offset_y + margin);
+    int16_t draw_x = max(x, margin);
+    int16_t draw_y = max(y, offset_y + margin);
     uint16_t draw_w = w - (draw_x - x);
     uint16_t draw_h = h - (draw_y - y);
     if(draw_x+draw_w > displayWidth - margin)draw_w -= (draw_x+draw_w) - (displayWidth - margin);
     if(draw_y+draw_h-offset_y > displayHeight/2 - margin)draw_h -= (draw_y+draw_h-offset_y) - (displayHeight/2 - margin);
     
-  	uint16_t cursor_x;
-  	uint16_t cursor_y;
-  	uint16_t text_x;
-  	uint16_t text_y;
+  	int16_t cursor_x;
+  	int16_t cursor_y;
+  	int16_t text_x;
+  	int16_t text_y;
   	uint16_t text_w;
   	uint16_t text_h;
   	uint16_t max_w;
@@ -89,12 +89,12 @@ public:
 
     DrawCommand *cmd_str = DrawCommandString::create(imageStr);
 
-    const char *image = ((DrawCommandString*)(cmd_str->data))->str;
+    const String *image = &(((DrawCommandString*)(cmd_str->data))->str);
   
-    for(int x = 0; x < IMAGE_WIDTH; x += BLOCKSIZE_X) {
-      for(int y = offset_y; y < offset_y+IMAGE_HEIGHT; y += BLOCKSIZE_Y) {
-        if(text_x > x + BLOCKSIZE_X || x > text_x + text_w || y > text_y + text_h || text_y > y + BLOCKSIZE_Y) {
-          if(x < draw_x + draw_w && draw_x < x + BLOCKSIZE_X && draw_y < y + BLOCKSIZE_Y && y < draw_y + draw_h) {
+    for(int16_t x = 0; x < IMAGE_WIDTH; x += BLOCKSIZE_X) {
+      for(int16_t y = offset_y; y < offset_y+IMAGE_HEIGHT; y += BLOCKSIZE_Y) {
+        if(text_x > x + BLOCKSIZE_X || x > text_x + static_cast<int32_t>(text_w) || y > text_y + static_cast<int32_t>(text_h) || text_y > y + BLOCKSIZE_Y) {
+          if(x < draw_x + static_cast<int32_t>(draw_w) && draw_x < x + BLOCKSIZE_X && draw_y < y + BLOCKSIZE_Y && y < draw_y + static_cast<int32_t>(draw_h)) {
             drawCommands->add(DrawCommandImage::create(x, y, BLOCKSIZE_X, BLOCKSIZE_Y, offset_y, image, draw_x, draw_y, draw_w, draw_h));
           }
         } else {
@@ -103,40 +103,40 @@ public:
 
             //x - text_x
           
-            if(x < draw_x + draw_w && draw_x < text_x && draw_y < y + BLOCKSIZE_Y && y < draw_y + draw_h) {
+            if(x < draw_x + static_cast<int32_t>(draw_w) && draw_x < text_x && draw_y < y + BLOCKSIZE_Y && y < draw_y + static_cast<int32_t>(draw_h)) {
               drawCommands->add(DrawCommandImage::create(x, y, text_x - x, BLOCKSIZE_Y, offset_y, image, draw_x, draw_y, draw_w, draw_h));
             }
 
             if(text_y > y){
 
               //y - text_y
-              if(x < draw_x + draw_w && draw_x < x + BLOCKSIZE_X && draw_y < text_y && y < draw_y + draw_h) {
+              if(x < draw_x + static_cast<int32_t>(draw_w) && draw_x < x + BLOCKSIZE_X && draw_y < text_y && y < draw_y + static_cast<int32_t>(draw_h)) {
                 drawCommands->add(DrawCommandImage::create(x, y, BLOCKSIZE_X, text_y - y, offset_y, image, draw_x, draw_y, draw_w, draw_h));
               }
             } else {
 
               //(text_y+text_h) - (y+BLOCKSIZE_Y)
-              if(y + BLOCKSIZE_Y > text_y + text_h && x < draw_x + draw_w && draw_x < x + BLOCKSIZE_X && draw_y < y + BLOCKSIZE_Y && text_y + text_h < draw_y + draw_h) {
+              if(y + BLOCKSIZE_Y > text_y + static_cast<int32_t>(text_h) && x < draw_x + static_cast<int32_t>(draw_w) && draw_x < x + BLOCKSIZE_X && draw_y < y + BLOCKSIZE_Y && text_y + static_cast<int32_t>(text_h) < draw_y + static_cast<int32_t>(draw_h)) {
                 drawCommands->add(DrawCommandImage::create(x, text_y + text_h, BLOCKSIZE_X, (y + BLOCKSIZE_Y) - (text_y + text_h), offset_y, image, draw_x, draw_y, draw_w, draw_h));
               }
             }
           } else {
 
             //(text_x+text_w) - x + BLOCKSIZE_X
-            if(x + BLOCKSIZE_X > text_x + text_w && text_x + text_w < draw_x + draw_w && draw_x < x + BLOCKSIZE_X && draw_y < y + BLOCKSIZE_Y && y < draw_y + draw_h) {
+            if(x + BLOCKSIZE_X > text_x + static_cast<int32_t>(text_w) && text_x + static_cast<int32_t>(text_w) < draw_x + static_cast<int32_t>(draw_w) && draw_x < x + BLOCKSIZE_X && draw_y < y + BLOCKSIZE_Y && y < draw_y + static_cast<int32_t>(draw_h)) {
               drawCommands->add(DrawCommandImage::create(text_x + text_w, y, (x + BLOCKSIZE_X) - (text_x + text_w), BLOCKSIZE_Y, offset_y, image, draw_x, draw_y, draw_w, draw_h));
             }
 
             if(text_y > y){
 
               //y - text_y
-              if(x < draw_x + draw_w && draw_x < x + BLOCKSIZE_X && draw_y < text_y && y < draw_y + draw_h) {
+              if(x < draw_x + static_cast<int32_t>(draw_w) && draw_x < x + BLOCKSIZE_X && draw_y < text_y && y < draw_y + static_cast<int32_t>(draw_h)) {
                 drawCommands->add(DrawCommandImage::create(x, y, BLOCKSIZE_X, text_y - y, offset_y, image, draw_x, draw_y, draw_w, draw_h));
               }
             } else {
 
               //(text_y+text_h) - (y+BLOCKSIZE_Y)
-              if(y + BLOCKSIZE_Y > text_y + text_h && x < draw_x + draw_w && draw_x < x + BLOCKSIZE_X && draw_y < y + BLOCKSIZE_Y && text_y + text_h < draw_y + draw_h) {
+              if(y + BLOCKSIZE_Y > text_y + static_cast<int32_t>(text_h) && x < draw_x + static_cast<int32_t>(draw_w) && draw_x < x + BLOCKSIZE_X && draw_y < y + BLOCKSIZE_Y && text_y + static_cast<int32_t>(text_h) < draw_y + static_cast<int32_t>(draw_h)) {
                 drawCommands->add(DrawCommandImage::create(x, text_y + text_h, BLOCKSIZE_X, (y + BLOCKSIZE_Y) - (text_y + text_h), offset_y, image, draw_x, draw_y, draw_w, draw_h));
               }
             }
@@ -152,9 +152,9 @@ public:
 
 private:
   Font *font;
-  char text[50];
-  char imageStr[50];
-  uint16_t offset_y;
+  String text;
+  String imageStr;
+  int16_t offset_y;
   uint16_t margin;
 
 }; //end class GraphicsImageWithoutText

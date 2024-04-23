@@ -9,18 +9,16 @@ class GraphicsListStreaming : public GraphicsList
 {
 
 public:
-  GraphicsListStreaming(Font *f_font, const char *s_action) :
-    GraphicsList(font),
-    action(),
+  GraphicsListStreaming(Font *f_font, const String &s_action) :
+    GraphicsList(f_font),
+    action(s_action),
     idToSet(),
     size(0),
     startIndex(0),
     list()
-  {
-    snprintf(action, 50, "%s", s_action);
-  }
+  {}
 
-  virtual bool isValid() const
+  virtual bool isValid()
   {
     if(!Graphics::isValid())
     {
@@ -44,7 +42,7 @@ public:
     Graphics::invalidate();
 
     for(int i = 0; i < list.size(); ++i)
-	{
+	  {
       GraphicsListRow *row = list.get(i);
       row->invalidate();
     }
@@ -56,12 +54,12 @@ public:
     
     if(idToSet != "")
     {
-      snprintf(command, 256, "{\"action\":\"%s\",\"rowsPerPage\":%d,\"id\":\"%s\"}", action, rowsPerPage, idToSet);
+      snprintf(command, 256, "{\"action\":\"%s\",\"rowsPerPage\":%d,\"id\":\"%s\"}", action.c_str(), rowsPerPage, idToSet.c_str());
       idToSet[0] = '\0';
     }
     else
     {
-      snprintf(command, 256, "{\"action\":\"%s\",\"rowsPerPage\":%d,\"currentSelection\":%d}", action, rowsPerPage, currentSelection);
+      snprintf(command, 256, "{\"action\":\"%s\",\"rowsPerPage\":%d,\"currentSelection\":%d}", action.c_str(), rowsPerPage, currentSelection);
     }
 
     Serial.println(command);
@@ -112,14 +110,14 @@ public:
     Graphics::invalidate();
   }
 
-  virtual void setCurrentId(const char *currentId) override
+  virtual void setCurrentId(const String &currentId) override
   {
     bool found = false;
 
     for(int i = 0; i < list.size(); ++i)
   	{
       const GraphicsListRow *row = list.get(i);
-      if(strncmp(row->getId(), currentId, 100) == 0)
+      if(row->getId() == currentId)
   	  {
           found = true;
           setCurrentSelection(i);
@@ -129,7 +127,7 @@ public:
 
     if(!found)
     {
-      snprintf(idToSet, 50, "%s", currentId);
+      idToSet = currentId;
     }
   }
 
@@ -146,16 +144,16 @@ public:
     return list.size();
   }
 
-  virtual const char* getCurrentId() override
+  virtual const String& getCurrentId() override
   {
-    if(strlen(idToSet) != 0)return idToSet;
-    if(startIndex > currentSelection || currentSelection - startIndex >= getListValidSize())return "";
+    if(idToSet != "")return idToSet;
+    if(startIndex > currentSelection || currentSelection - startIndex >= getListValidSize())return Utils::emptyString();
 
     const GraphicsListRow *row = list.get(currentSelection - startIndex);
     return row->getId();
   }
 
-  virtual int getSize() const override
+  virtual int getSize() override
   {
     return size;
   }
@@ -172,7 +170,7 @@ public:
 
     int listValidSize = getListValidSize();
     for(int i = 0; i < listValidSize; ++i)
-	{
+	  {
       uint16_t x = 0;
       uint16_t y = ROW_HEIGHT * i;
       uint16_t w = displayWidth;
@@ -218,8 +216,8 @@ public:
   }
 
 private:
-  char action[50];
-  char idToSet[50];
+  String action;
+  String idToSet;
   int size;
   int startIndex;
   LinkedList<GraphicsListRow*> list;

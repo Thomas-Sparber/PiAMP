@@ -10,7 +10,7 @@ class GraphicsListRow : public Graphics
 {
 
 public:
-  GraphicsListRow(Font *f_font, const char *s_id, const char *s_name) :
+  GraphicsListRow(Font *f_font, const String &s_id, const String &s_name) :
     font(f_font),
     id(),
     name(),
@@ -26,30 +26,30 @@ public:
     setName(s_name);
   }
 
-  void setId(const char *s_id)
+  void setId(const String &s_id)
   {
-    if(strncmp(id, s_id, 100) != 0)
+    if(id != s_id)
     {
-      snprintf(id, 100, "%s", s_id);
+      id = s_id;
       invalidate();
     }
   }
 
-  const char* getId() const
+  const String& getId() const
   {
     return id;
   }
 
-  void setName(const char *s_name)
+  void setName(const String &s_name)
   {
-    if(strncmp(name, s_name, 100) != 0)
+    if(name != s_name)
     {
-      snprintf(name, 100, "%s", s_name);
+      name = s_name;
       invalidate();
     }
   }
 
-  const char* getName() const
+  const String& getName() const
   {
     return name;
   }
@@ -85,7 +85,7 @@ public:
     }
   }
 
-  virtual void createDrawCommands(LinkedList<DrawCommand*> *drawCommands, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h, uint16_t displayWidth, uint16_t displayHeight) override
+  virtual void createDrawCommands(LinkedList<DrawCommand*> *drawCommands, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h, uint16_t displayWidth, uint16_t /*displayHeight*/) override
   {
     uint16_t x = 0;
     uint16_t y = ROW_HEIGHT * index;
@@ -97,7 +97,7 @@ public:
       uint16_t cursor_x = 20;
       uint16_t cursor_y = ROW_HEIGHT * (index+1) - 15;
       cursor_x -= 10;
-      LinkedList<Utils::TextPart> texts = Utils::splitText(font, name, cursor_x, cursor_y, 1, displayWidth);
+      LinkedList<Utils::TextPart> texts = Utils::splitText(font, name.c_str(), cursor_x, cursor_y, 1, displayWidth);
 
       Utils::TextPart p = texts.get(0);
       drawCommands->add(DrawCommandRectangle::create(x, y, w, h, background_r, background_g, background_b, draw_x, draw_y, draw_w, draw_h));
@@ -116,8 +116,8 @@ public:
 
 private:
   Font *font;
-  char id[100];
-  char name[100];
+  String id;
+  String name;
   uint16_t index;
   bool isSelected;
   unsigned char selected_r;

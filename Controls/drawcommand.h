@@ -7,7 +7,7 @@
 
 struct DrawCommand
 {
-  static DrawCommand* create(DrawCommandType type, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h)
+  static DrawCommand* create(DrawCommandType type, int16_t x, int16_t y, uint16_t w, uint16_t h, int16_t draw_x, int16_t draw_y, uint16_t draw_w, uint16_t draw_h)
   {
     DrawCommand *command = (DrawCommand*)ReusableDrawCommands::get();
     command->type = type;
@@ -22,8 +22,8 @@ struct DrawCommand
   }
 
   DrawCommandType type;
-  uint16_t x;
-  uint16_t y;
+  int16_t x;
+  int16_t y;
   uint16_t w;
   uint16_t h;
   DrawCommandHandler *data;

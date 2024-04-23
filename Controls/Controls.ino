@@ -42,37 +42,11 @@ enum class Selection
   IrList
 };
 
-struct Command
-{
-  Command()
-  {}
-  
-  Command(const char *data)
-  {
-    int written = snprintf(command, 256, "%s", data);
-    if(written < 0 || written >= 256)Utils::log("Command string concat problem");
-  }
-  
-  Command(const char *a, int b, const char *c)
-  {
-    int written = snprintf(command, 256, "%s%d%s", a, b, c);
-    if(written < 0 || written >= 256)Utils::log("Command string concat problem");
-  }
-  
-  Command(const char *a, const char *b, const char *c)
-  {
-    int written = snprintf(command, 256, "%s%s%s", a, b, c);
-    if(written < 0 || written >= 256)Utils::log("Command string concat problem");
-  }
-  
-  char command[256];
-};
-
 LCDWIKI_KBV mylcd(ILI9486,A3,A2,A1,A0,A4); //model,cs,cd,wr,rd,reset
 
 LinkedList<Graphics*> drawQueue;
 LinkedList<DrawCommand*> drawCommands;
-LinkedList<Command> serialCommands;
+LinkedList<String> serialCommands;
 Font font(&drawPixel, &drawRect);
 
 GraphicsBorder modelBorder;
@@ -94,13 +68,13 @@ bool irLoaded = false;
 bool encoderPressed = false;
 Selection currentSelection = Selection::Model;
 
-void drawRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color)
+void drawRect(int16_t x, int16_t y, int16_t width, int16_t height, int16_t color)
 {
   mylcd.Set_Draw_color(color);
   mylcd.Fill_Rectangle(x, y, width, height);
 }
 
-void drawPixel(uint16_t x, uint16_t y, uint16_t color)
+void drawPixel(int16_t x, int16_t y, uint16_t color)
 {
   mylcd.Draw_Pixe(x, y, color);
 }
@@ -173,7 +147,7 @@ void repaintAll(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
     g->invalidate();
   }
 
-  repaint();
+  repaint(x, y, w, h);
 }
 
 void repaintAll()
@@ -181,7 +155,7 @@ void repaintAll()
   repaintAll(0, 0, mylcd.Get_Display_Width(), mylcd.Get_Display_Height());
 }
 
-void readCurrentModelIr(const char *action, char *id, int idLength, char *name, int nameLength, char *image, int imageLength)
+void readCurrentModelIr(const char *action, String *id, String *name, String *image)
 {
   char command[256];
   snprintf(command, 256, "{\"action\":\"%s\"}", action);
@@ -194,19 +168,19 @@ void readCurrentModelIr(const char *action, char *id, int idLength, char *name, 
   if(id)
   {
     const char *tempId = doc["id"];
-    snprintf(id, idLength, "%s", tempId);
+    (*id) = tempId;
   }
 
   if(name)
   {
     const char *tempName = doc["name"];
-    snprintf(name, nameLength, "%s", tempName);
+    (*name) = tempName;
   }
 
   if(image)
   {
     const char *tempImage = doc["image"];
-    snprintf(image, imageLength, "%s", tempImage);
+    (*image) = tempImage;
   }
 }
 
@@ -270,8 +244,8 @@ void setupScreen()
     modelList.setSelectedColor(95, 5, 32);
     modelList.setBackgroundColor(0, 0, 0);
     modelList.setTextColor(255, 255, 255);
-    char id[100];
-    readCurrentModelIr("getmodel", id, 100, NULL, 0, NULL, 0);
+    String id;
+    readCurrentModelIr("getmodel", &id, NULL, NULL);
     modelList.setCurrentId(id);
     
     drawQueue.add(&modelList);
@@ -286,8 +260,8 @@ void setupScreen()
     irList.setSelectedColor(95, 5, 32);
     irList.setBackgroundColor(0, 0, 0);
     irList.setTextColor(255, 255, 255);
-    char id[100];
-    readCurrentModelIr("getir", id, 100, NULL, 100, NULL, 100);
+    String id;
+    readCurrentModelIr("getir", &id, NULL, NULL);
     irList.setCurrentId(id);
     
     drawQueue.add(&irList);
@@ -375,8 +349,8 @@ void handleSerial() {
   bool waitingResponse = false;
   if(serialCommands.size() != 0)
   {
-    const Command command = serialCommands.shift();
-    Serial.println(command.command);
+    const String command = serialCommands.shift();
+    Serial.println(command);
     waitingResponse = true;
   }
   else if(pi_available)
@@ -398,7 +372,7 @@ void handleSerial() {
       if(millis() >= startTime + timeout)
       {
         Utils::log("Read timeout");
-        return currentCommand;
+        return;
       }
     }
     
@@ -426,12 +400,12 @@ void handleDrawCommands(int diff)
   {
     if(drawCommands.get(0)->type == DrawCommandType::Sleep)
     {
-      DrawCommandSleep *s = drawCommands.get(0)->data;
+      DrawCommandSleep *s = static_cast<DrawCommandSleep*>(drawCommands.get(0)->data);
       s->milliseconds -= diff;
       if(s->milliseconds > 0)return;
     }
     
-    const DrawCommand *command = drawCommands.shift();
+    DrawCommand *command = drawCommands.shift();
     command->data->handle(&mylcd, &font, command->x, command->y, command->w, command->h);
     ReusableDrawCommands::put(command->type, command->data);
     ReusableDrawCommands::put(command);
@@ -445,25 +419,37 @@ void handleDrawCommands(int diff)
 void changeModel(int diff)
 {
   clearDrawCommands();
-  serialCommands.add(Command("{\"action\":\"modelchange\",\"value\":",diff,"}"));
+
+  char temp[256];
+  snprintf(temp, 256, "{\"action\":\"modelchange\",\"value\":%d}", diff);
+  serialCommands.add(temp);
 }
 
-void changeModel(const char *model)
+void changeModel(const String &model)
 {
   clearDrawCommands();
-  serialCommands.add(Command("{\"action\":\"modelchange\",\"model\":\"",model,"\"}"));
+
+  char temp[256];
+  snprintf(temp, 256, "{\"action\":\"modelchange\",\"model\":\"%s\"}", model.c_str());
+  serialCommands.add(temp);
 }
 
 void changeIr(int diff)
 {
   clearDrawCommands();
-  serialCommands.add(Command("{\"action\":\"irchange\",\"value\":",diff,"}"));
+
+  char temp[256];
+  snprintf(temp, 256, "{\"action\":\"irchange\",\"value\":%d}", diff);
+  serialCommands.add(temp);
 }
 
-void changeIr(const char *ir)
+void changeIr(const String &ir)
 {
   clearDrawCommands();
-  serialCommands.add(Command("{\"action\":\"irchange\",\"ir\":\"",ir,"\"}"));
+
+  char temp[256];
+  snprintf(temp, 256, "{\"action\":\"irchange\",\"ir\":\"%s\"}", ir.c_str());
+  serialCommands.add(temp);
 }
 
 void handleEncoder()
@@ -526,8 +512,8 @@ void handleEncoder()
     }
     else if(currentSelection == Selection::ModelIrList)
     {
-      const char *selected = modelIrList.getCurrentId();
-      if(strcmp(selected, MODEL_ID) == 0)
+      const String &selected = modelIrList.getCurrentId();
+      if(selected == MODEL_ID)
         currentSelection = Selection::ModelList;
       else
         currentSelection = Selection::IrList;
@@ -539,8 +525,8 @@ void handleEncoder()
     }
     else if(currentSelection == Selection::ModelList)
     {
-      char id[100];
-      readCurrentModelIr("getmodel", id, 100, NULL, 0, NULL, 0);
+      String id;
+      readCurrentModelIr("getmodel", &id, NULL, NULL);
       if(id != modelList.getCurrentId())
       {
         changeModel(modelList.getCurrentId());
@@ -556,8 +542,8 @@ void handleEncoder()
     }
     else if(currentSelection == Selection::IrList)
     {
-      char id[100];
-      readCurrentModelIr("getir", id, 100, NULL, 0, NULL, 0);
+      String id;
+      readCurrentModelIr("getir", &id, NULL, NULL);
       if(id != irList.getCurrentId())
       {
         changeIr(irList.getCurrentId());
@@ -613,7 +599,7 @@ void clearDrawCommands()
 {
   while(drawCommands.size() != 0)
   {
-    const DrawCommand *command = drawCommands.shift();
+    DrawCommand *command = drawCommands.shift();
     ReusableDrawCommands::put(command->type, command->data);
     ReusableDrawCommands::put(command);
   }
@@ -625,7 +611,7 @@ void addDrawCommandSleep(int ms)
 {
   if(drawCommands.size() != 0 && drawCommands.get(0)->type == DrawCommandType::Sleep)
   {
-    DrawCommandSleep *s = drawCommands.get(0)->data;
+    DrawCommandSleep *s = static_cast<DrawCommandSleep*>(drawCommands.get(0)->data);
     s->milliseconds = ms;
   }
   else
@@ -638,7 +624,7 @@ void showLoading() {
   static float radius = 0;
   const int count = 11;
   const float angles[] = { -1.0, -0.9, -0.8, -0.7, -0,6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0 };
-  const int16_t colors[] = {
+  const uint16_t colors[] = {
     mylcd.Color_To_565(189,   9,  64),
     mylcd.Color_To_565(189,   9,  64),
     mylcd.Color_To_565(194,  29,  79),

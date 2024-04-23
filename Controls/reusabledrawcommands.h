@@ -4,6 +4,8 @@
 
 #include "drawcommandtype.h"
 
+#define MAX_DRAW_COMMANDS 1
+
 struct SavedDrawCommand
 {
   DrawCommandType type;
@@ -21,7 +23,8 @@ public:
   static void put(DrawCommandType type, DrawCommandHandler *handler);
 
 private:
-  static LinkedList<void*> drawCommands;
+  static void* drawCommands[MAX_DRAW_COMMANDS];
+  static int drawCommandsSize;
   static LinkedList<SavedDrawCommand> drawCommandHandlers;
 
 }; //end class ReusableDrawCommands

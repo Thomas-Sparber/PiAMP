@@ -12,6 +12,9 @@ public:
     valid(false)
   {}
 
+  virtual ~Graphics()
+  {}
+
   virtual bool isValid() const
   {
     return valid;

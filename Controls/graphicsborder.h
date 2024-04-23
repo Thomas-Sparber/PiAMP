@@ -70,7 +70,7 @@ public:
     }
   }
 
-  virtual void createDrawCommands(LinkedList<DrawCommand*> *drawCommands, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h, uint16_t displayWidth, uint16_t displayHeight) override
+  virtual void createDrawCommands(LinkedList<DrawCommand*> *drawCommands, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h, uint16_t /*displayWidth*/, uint16_t /*displayHeight*/) override
   {
     const unsigned char outset_color_1_r = 250;
     const unsigned char outset_color_1_g = 180;

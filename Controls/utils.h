@@ -66,13 +66,13 @@ inline static void log(const char *a, int b) {
 
 inline static void log(const char *a, const char *b, const char *c) {
   char text[256];
-  snprintf(text, 256, "{\"action\":\"log\",\"message\":\"%s%s%\"}", a, b, c);
+  snprintf(text, 256, "{\"action\":\"log\",\"message\":\"%s%s%s\"}", a, b, c);
   Serial.println(text);
 }
 
 inline static int lastIndexOf(const char *text, char p, int index)
 {
-  while(index > 0)
+  while(index >= 0)
   {
     if(text[index] == p)
     {
@@ -85,7 +85,7 @@ inline static int lastIndexOf(const char *text, char p, int index)
   return index;
 }
 
-inline static LinkedList<TextPart> splitText(const Font *font, const char *toSplit, uint16_t cursor_x, uint16_t cursor_y, int maxLines, int maxWidth)
+inline static LinkedList<TextPart> splitText(Font *font, const char *toSplit, uint16_t cursor_x, uint16_t cursor_y, int maxLines, uint16_t maxWidth)
 {
   LinkedList<TextPart> parts;
 
@@ -98,10 +98,10 @@ inline static LinkedList<TextPart> splitText(const Font *font, const char *toSpl
     char tempPart[256];
     snprintf(tempPart, 256, "%s", text);
     char *part = trim(tempPart);
-    text[0] = '\0';
+    text += strlen(text);
     
-    uint16_t text_x;
-    uint16_t text_y;
+    int16_t text_x;
+    int16_t text_y;
     uint16_t text_w;
     uint16_t text_h;
     font->getTextBounds(part, cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
@@ -152,8 +152,8 @@ inline static LinkedList<TextPart> splitText(const Font *font, const char *toSpl
 
     while(text_x + text_w > maxWidth)
     {
-      snprintf(text, 256, "%s%s", part + strlen(part) - 1, text);
-      snprintf(part, min(256, strlen(part) - 1), "%s", part);
+      text--;
+      part[strlen(part) - 1] = '\0';
 
       font->getTextBounds(part, cursor_x, cursor_y, &text_x, &text_y, &text_w, &text_h);
     }
@@ -194,7 +194,7 @@ inline static void readSerialLine(char *currentCommand, int size, int timeout=10
       if(millis() >= startTime + timeout)
       {
         Utils::log("Read timeout");
-        return currentCommand;
+        return;
       }
     }
   
@@ -203,7 +203,7 @@ inline static void readSerialLine(char *currentCommand, int size, int timeout=10
 
       if(b == '\n') {
         currentCommand[currentPosition] = '\0';
-        return currentCommand;
+        return;
       }
 
       if(currentPosition < size)
@@ -212,6 +212,13 @@ inline static void readSerialLine(char *currentCommand, int size, int timeout=10
       }
     }
   }
+}
+
+inline static const String& emptyString()
+{
+  static String empty = "";
+
+  return empty;
 }
 
 } //end namespace Utils

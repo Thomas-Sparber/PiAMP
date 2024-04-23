@@ -58,12 +58,12 @@ public:
   }
 
   void getTextWidth(const char *str, uint16_t *w) {
-    int16_t h;
+    uint16_t h;
     getTextBounds(str, w, &h);
   }
 
   void getTextHeight(const char *str, uint16_t *h) {
-    int16_t w;
+    uint16_t w;
     getTextBounds(str, &w, h);
   }
 
@@ -139,7 +139,7 @@ public:
   }
 
   void drawChar(int16_t x, int16_t y, unsigned char c,
-                              uint16_t color, uint16_t bg, uint8_t size_x,
+                              uint16_t color, uint16_t /*bg*/, uint8_t size_x,
                               uint8_t size_y) {
 
     // Character is assumed previously filtered by write() to eliminate
@@ -210,7 +210,7 @@ public:
         uint8_t w = pgm_read_byte(&glyph->width),
                 h = pgm_read_byte(&glyph->height);
         if ((w > 0) && (h > 0)) { // Is there an associated bitmap?
-          int16_t xo = (int8_t)pgm_read_byte(&glyph->xOffset); // sic
+          /*int16_t xo = */(int8_t)pgm_read_byte(&glyph->xOffset); // sic
           drawChar(cursor_x, cursor_y, c, textcolor, textcolor, textsize_x,
                    textsize_y);
         }

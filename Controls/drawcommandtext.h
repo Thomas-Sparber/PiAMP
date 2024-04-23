@@ -4,7 +4,7 @@
 
 struct DrawCommandText : public DrawCommandHandler
 {
-  static DrawCommand* create(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t cursor_x, uint16_t cursor_y, unsigned char r, unsigned char g, unsigned char b, const char *text, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h)
+  static DrawCommand* create(int16_t x, int16_t y, uint16_t w, uint16_t h, int16_t cursor_x, int16_t cursor_y, unsigned char r, unsigned char g, unsigned char b, const String &text, int16_t draw_x, int16_t draw_y, uint16_t draw_w, uint16_t draw_h)
   {
     DrawCommand *command = DrawCommand::create(DrawCommandType::Text, x, y, w, h, draw_x, draw_y, draw_w, draw_h);
     DrawCommandText *commandText = (DrawCommandText*)ReusableDrawCommands::get(DrawCommandType::Text);
@@ -13,12 +13,12 @@ struct DrawCommandText : public DrawCommandHandler
     commandText->r = r;
     commandText->g = g;
     commandText->b = b;
-    snprintf(commandText->text, 50, "%s", text);
+    commandText->text = text;
     command->data = commandText;
     return command;
   }
 
-  virtual void handle(LCDWIKI_KBV *mylcd, Font *font, uint16_t x, uint16_t y, uint16_t w, uint16_t h) override
+  virtual void handle(LCDWIKI_KBV *mylcd, Font *font, int16_t /*x*/, int16_t /*y*/, uint16_t /*w*/, uint16_t /*h*/) override
   {
     unsigned int color = mylcd->Color_To_565(r, g, b);
     font->setTextColor(color);
@@ -26,10 +26,10 @@ struct DrawCommandText : public DrawCommandHandler
     font->print(text);
   }
   
-  uint16_t cursor_x;
-  uint16_t cursor_y;
+  int16_t cursor_x;
+  int16_t cursor_y;
   unsigned char r;
   unsigned char g;
   unsigned char b;
-  char text[50];
+  String text;
 };

@@ -32,25 +32,25 @@ public:
     textToClear()
   {}
 
-  const char* getText() const
+  const String& getText() const
   {
     return text;
   }
 
-  void setText(const char *s_text)
+  void setText(const String &s_text)
   {
-    if(strncmp(text, s_text, 50) != 0)
+    if(text != s_text)
 	  {
-      snprintf(text, 50, "%s", s_text);
+      text = s_text;
       invalidate();
     }
   }
 
-  void setImageStr(const char *s_imageStr)
+  void setImageStr(const String &s_imageStr)
   {
-    if(strncmp(imageStr, s_imageStr, 50) != 0)
+    if(imageStr != s_imageStr)
     {
-      snprintf(imageStr, 50, "%s", s_imageStr);
+      imageStr = s_imageStr;
       invalidate();
     }
   }
@@ -86,12 +86,12 @@ public:
     }
   }
 
-  static LinkedList<Utils::TextPart> doPrecalculation(Font *font, const char *text, uint16_t offset_y, uint16_t displayWidth, uint16_t displayHeight, uint16_t &cursor_x, uint16_t &cursor_y, uint16_t &text_x, uint16_t &text_y, uint16_t &text_w, uint16_t &text_h, uint16_t &max_w, uint16_t &max_h)
+  static LinkedList<Utils::TextPart> doPrecalculation(Font *font, const String &text, int16_t offset_y, uint16_t displayWidth, uint16_t displayHeight, int16_t &cursor_x, int16_t &cursor_y, int16_t &text_x, int16_t &text_y, uint16_t &text_w, uint16_t &text_h, uint16_t &max_w, uint16_t &max_h)
   {
     cursor_x = 100;
     cursor_y = offset_y + 100;
   
-    LinkedList<Utils::TextPart> texts = Utils::splitText(font, text, cursor_x, cursor_y, MAXLINES, displayWidth);
+    LinkedList<Utils::TextPart> texts = Utils::splitText(font, text.c_str(), cursor_x, cursor_y, MAXLINES, displayWidth);
 
     max_w = 0;
     max_h = 0;
@@ -125,12 +125,12 @@ public:
 
   virtual void createDrawCommands(LinkedList<DrawCommand*> *drawCommands, uint16_t draw_x, uint16_t draw_y, uint16_t draw_w, uint16_t draw_h, uint16_t displayWidth, uint16_t displayHeight) override
   {
-    if(strlen(text) == 0 && strlen(imageStr) == 0)return;
+    if(text == "" && imageStr == "")return;
 
-    uint16_t cursor_x;
-    uint16_t cursor_y;
-    uint16_t text_x;
-    uint16_t text_y;
+    int16_t cursor_x;
+    int16_t cursor_y;
+    int16_t text_x;
+    int16_t text_y;
     uint16_t text_w;
     uint16_t text_h;
     uint16_t max_w;
@@ -140,15 +140,19 @@ public:
 
     DrawCommand *cmd_str = DrawCommandString::create(imageStr);
 
-    const char *image = ((DrawCommandString*)(cmd_str->data))->str;
+    const String *image = &(((DrawCommandString*)(cmd_str->data))->str);
 
-    if(text_x < draw_x + draw_w && draw_x < text_x + text_w && draw_y < text_y + text_h && text_y < draw_y + draw_h) {
-      if(strlen(textToClear) != 0 && strncmp(textToClear, text, 50) != 0)
+    if(text_x < draw_x + static_cast<int32_t>(draw_w) &&
+        draw_x < text_x + static_cast<int32_t>(text_w) &&
+        draw_y < text_y + static_cast<int32_t>(text_h) &&
+        text_y < draw_y + static_cast<int32_t>(draw_h))
+    {
+      if(textToClear != "" && textToClear != text)
       {
-        uint16_t old_cursor_x;
-        uint16_t old_cursor_y;
-        uint16_t old_text_x;
-        uint16_t old_text_y;
+        int16_t old_cursor_x;
+        int16_t old_cursor_y;
+        int16_t old_text_x;
+        int16_t old_text_y;
         uint16_t old_text_w;
         uint16_t old_text_h;
         uint16_t old_max_w;
@@ -194,15 +198,15 @@ public:
 
     drawCommands->add(cmd_str);
 
-    snprintf(textToClear, 50, "%s", text);
+    textToClear = text;
 
     revalidateUsingDrawCommand(drawCommands);
   }
 
 private:
   Font *font;
-  char text[50];
-  char imageStr[50];
+  String text;
+  String imageStr;
   uint16_t offset_y;
   unsigned char background_r;
   unsigned char background_g;
@@ -210,6 +214,6 @@ private:
   unsigned char text_r;
   unsigned char text_g;
   unsigned char text_b;
-  char textToClear[50];
+  String textToClear;
 
 }; //end class GraphicsTextAndImage

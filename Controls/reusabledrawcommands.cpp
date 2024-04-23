@@ -8,14 +8,16 @@
 #include "drawcommandrevalidate.h"
 #include "reusabledrawcommands.h"
 
-LinkedList<void*> ReusableDrawCommands::drawCommands;
+void* ReusableDrawCommands::drawCommands[MAX_DRAW_COMMANDS];
 LinkedList<SavedDrawCommand> ReusableDrawCommands::drawCommandHandlers;
+int ReusableDrawCommands::drawCommandsSize = 0;
 
 void* ReusableDrawCommands::get()
 {
-  if(drawCommands.size() != 0)
+  if(drawCommandsSize != 0)
   {
-    return drawCommands.shift();
+    drawCommandsSize--;
+    return drawCommands[drawCommandsSize];
   }
 
   return new DrawCommand();
@@ -23,9 +25,16 @@ void* ReusableDrawCommands::get()
 
 void ReusableDrawCommands::put(void *drawCommand)
 {
-  delete drawCommand;
+  delete (DrawCommand*)drawCommand;
   return;
-  drawCommands.add(drawCommand);
+
+  if(drawCommandsSize >= MAX_DRAW_COMMANDS)
+  {
+    delete (DrawCommand*)drawCommand;
+    return;
+  }
+  drawCommands[drawCommandsSize] = drawCommand;
+  drawCommandsSize++;
 }
 
 DrawCommandHandler* ReusableDrawCommands::get(DrawCommandType type)
@@ -63,7 +72,33 @@ DrawCommandHandler* ReusableDrawCommands::get(DrawCommandType type)
 
 void ReusableDrawCommands::put(DrawCommandType type, DrawCommandHandler *handler)
 {
-  delete handler;
+  switch(type)
+  {
+    case DrawCommandType::Image:
+      delete (DrawCommandImage*)handler;
+	  break;
+    case DrawCommandType::Text:
+      delete (DrawCommandText*)handler;
+	  break;
+    case DrawCommandType::TextWithImageBackground:
+      delete (DrawCommandTextWithImageBackground*)handler;
+	  break;
+    case DrawCommandType::String:
+      delete (DrawCommandString*)handler;
+	  break;
+    case DrawCommandType::Sleep:
+      delete (DrawCommandSleep*)handler;
+	  break;
+    case DrawCommandType::Rectangle:
+      delete (DrawCommandRectangle*)handler;
+	  break;
+    case DrawCommandType::Revalidate:
+      delete (DrawCommandRevalidate*)handler;
+	  break;
+    default:
+      Utils::log("Received invalid draw command to delete - memory leak!");
+      break;
+  }
   return;
   SavedDrawCommand d;
   d.type = type;

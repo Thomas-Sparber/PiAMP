@@ -9,12 +9,12 @@ class GraphicsListStatic : public GraphicsList
 
 public:
   GraphicsListStatic(Font *f_font) :
-    GraphicsList(font),
+    GraphicsList(f_font),
     pageStart(0),
     list()
   {}
 
-  virtual bool isValid() const
+  virtual bool isValid()
   {
     if(!Graphics::isValid())
     {
@@ -22,12 +22,12 @@ public:
     }
 
     for(int i = 0; i < list.size(); ++i)
-	{
+	  {
       const GraphicsListRow *row = list.get(i);
       if(!row->isValid())
-	  {
-        return false;
-	  }
+  	  {
+          return false;
+  	  }
     }
 
     return false;
@@ -38,20 +38,20 @@ public:
     Graphics::invalidate();
 
     for(int i = 0; i < list.size(); ++i)
-	{
+	  {
       GraphicsListRow *row = list.get(i);
       row->invalidate();
     }
   }
 
-  virtual void setCurrentId(const char *currentId) override
+  virtual void setCurrentId(const String &currentId) override
   {
     bool found = false;
 
     for(int i = 0; i < list.size(); ++i)
 	  {
       const GraphicsListRow *row = list.get(i);
-      if(strncmp(row->getId(), currentId, 100) == 0)
+      if(row->getId() == currentId)
   	  {
           found = true;
           setCurrentSelection(i);
@@ -61,13 +61,13 @@ public:
 
     if(!found)
     {
-      Utils::log("New id ", currentId, " not found");
+      Utils::log("New id ", currentId.c_str(), " not found");
     }
   }
 
-  virtual const char* getCurrentId() override
+  virtual const String& getCurrentId() override
   {
-    if(currentSelection >= list.size())return "";
+    if(currentSelection >= list.size())return Utils::emptyString();
 
     const GraphicsListRow *row = list.get(currentSelection);
     return row->getId();
@@ -76,21 +76,21 @@ public:
   void clearList()
   {
     while(list.size() > 0)
-	{
+	  {
       GraphicsListRow *row = list.shift();
       delete row;
-	}
+	  }
 
     list.clear();
   }
 
-  void addEntry(const char *id, const char *name)
+  void addEntry(const String &id, const String &name)
   {
     GraphicsListRow *row = new GraphicsListRow(font, id, name);
     list.add(row);
   }
 
-  virtual int getSize() const override
+  virtual int getSize() override
   {
     return list.size();
   }
@@ -100,16 +100,16 @@ public:
     int rowsPerPage = displayHeight / ROW_HEIGHT;
     int newPageStart = (currentSelection / rowsPerPage) * rowsPerPage;
     if(pageStart != newPageStart)
-	{
+	  {
       pageStart = newPageStart;
       invalidate();
-	}
+	  }
 
     for(int i = 0; i < rowsPerPage; ++i)
-	{
-      int currentIndex = pageStart + i;
-	  if(currentIndex < list.size())
 	  {
+      int currentIndex = pageStart + i;
+  	  if(currentIndex < list.size())
+  	  {
         uint16_t x = 0;
         uint16_t y = ROW_HEIGHT * i;
         uint16_t w = displayWidth;

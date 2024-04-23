@@ -104,11 +104,11 @@ public:
 	}
   }
 
-  virtual void setCurrentId(const char *currentId) = 0;
+  virtual void setCurrentId(const String &currentId) = 0;
 
-  virtual const char* getCurrentId() = 0;
+  virtual const String& getCurrentId() = 0;
 
-  virtual int getSize() const = 0;
+  virtual int getSize() = 0;
 
   virtual void incrementCurrentSelection(int diff)
   {
