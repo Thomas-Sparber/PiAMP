@@ -31,6 +31,10 @@
         "isChannel": true,
         "isFX": false
     },
+    "IrWetLevel": {
+        "isChannel": false,
+        "isFX": false
+    },
 
 
     "Delay": {
@@ -123,6 +127,10 @@
     },
     "IrState": {
         "isChannel": true,
+        "isFX": false
+    },
+    "Record": {
+        "isChannel": false,
         "isFX": false
     }
 }

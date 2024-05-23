@@ -46,7 +46,7 @@ controls.getImageCallback = function(name, x, y, w, h) {
 }
 controls.getCallbacks["Ir"] = getIrs;
 controls.getCallbacks["Model"] = getModels;
-["Model", "Ir"].forEach(function(param) {
+controls.relevantParameters.forEach(function(param) {
     controls.paramChangedCallbacks[param] = function(value) {
         updateParameter(param, value, { notifyControls: false });
     }
@@ -90,10 +90,14 @@ function getIrs() {
 
             const jsonFile = irsFolder + "/" + id + ".json";
             if(fs.existsSync(jsonFile)) {
-                const content = fs.readFileSync(jsonFile);
-                const parsed = JSON.parse(content);
-                if(parsed.name)name = parsed.name;
-                if(parsed.image)image = parsed.image;
+                try {
+                    const content = fs.readFileSync(jsonFile);
+                    const parsed = JSON.parse(content);
+                    if(parsed.name)name = parsed.name;
+                    if(parsed.image)image = parsed.image;
+                } catch(e) {
+                    console.log("Error parsing file " + jsonFile, e);
+                }
             }
 
             result.push({
@@ -104,6 +108,10 @@ function getIrs() {
         }
     });
 
+    result.sort(function(a, b) {
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    });
+
     return result;
 }
 
@@ -112,16 +120,24 @@ function getModels() {
 
     fs.readdirSync(modelsFolder).forEach(file => {
         if(file.toLowerCase().endsWith("json")) {
-            const content = fs.readFileSync(modelsFolder + "/" + file);
-            const parsed = JSON.parse(content);
-            const id = path.parse(modelsFolder + "/" + file).name;
+            try {
+                const content = fs.readFileSync(modelsFolder + "/" + file);
+                const parsed = JSON.parse(content);
+                const id = path.parse(modelsFolder + "/" + file).name;
 
-            result.push({
-                id: id,
-                name: parsed.name || id,
-                image: parsed.image || id
-            });
+                result.push({
+                    id: id,
+                    name: parsed.name || id,
+                    image: parsed.image || id
+                });
+            } catch (e) {
+                console.log("Error parsing file " + modelsFolder + "/" + file, e);
+            }
         }
+    });
+
+    result.sort(function(a, b) {
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
     });
 
     return result;

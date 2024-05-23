@@ -45,7 +45,8 @@ class BLE {
         AmpState: 0x001E,
         LSTMState: 0x001F,
         IrState: 0x0020,
-        Record: 0x0021
+        Record: 0x0021,
+        IrWetLevel: 0x0022
     };
 
     listCharacteristics = {
@@ -133,7 +134,8 @@ class BLE {
                                         //console.log("Read " + self.listCharacteristics[ch]);
 
                                         if(!writeCache[ch]) {
-                                            const result = self.getCallbacks[ch]();
+                                            let result = self.getCallbacks[ch]();
+                                            result = result.map(function(r) { return { id: r.id, name: r.name }; });    //remove images - save bandwidth
                                             writeCache[ch] = JSON.stringify(result) + "\n";
 
                                         }

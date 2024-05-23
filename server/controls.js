@@ -9,13 +9,15 @@ class Controls {
     currentIr = 0;
     getCallbacks;
     updateParameterQueue;
-    updateTimer;
+    //updateTimer;
+    relevantParameters;
 
     constructor(serialUSB) {
         this.serialUSB = serialUSB;
         this.getCallbacks = {};
         this.paramChangedCallbacks = {};
         this.updateParameterQueue = [];
+        this.relevantParameters = ["Model", "Ir"];
     }
 
     start() {
@@ -119,6 +121,10 @@ class Controls {
             if(data.action == "ping") {
                 response({ action: "pong" });
             }
+
+            if(data.action == "getcommands") {
+                self.sendParameterInternal(response);
+            }
         });
     }
 
@@ -132,39 +138,43 @@ class Controls {
     }
 
     setParameter(parameter, value) {
-        this.updateParameterQueue.push({ parameter: parameter, value: value });
+        if(this.relevantParameters.indexOf(parameter) != -1) {
+            this.updateParameterQueue.push({ parameter: parameter, value: value });
 
-        var self = this;
-        clearTimeout(this.updateTimer);
-        this.updateTimer = setTimeout(function() { self.sendParametersInternal(); }, 0);
+            //var self = this;
+            //clearTimeout(this.updateTimer);
+            //this.updateTimer = setTimeout(function() { self.sendParametersInternal(); }, 0);
+        }
     }
 
-    sendParametersInternal() {
+    sendParameterInternal(response) {
         var self = this;
 
-        this.updateParameterQueue.forEach(function(p) {
-            var parameter = p.parameter;
-            var value = p.value;
+        if(this.updateParameterQueue.length > 0) {
+            var parameter = this.updateParameterQueue[0].parameter;
+            var value = this.updateParameterQueue[0].value;
+
+            this.updateParameterQueue.splice(0, 1);
 
             if(parameter == "Model") {
                 const models = self.getCallbacks["Model"]();
                 if(!models || models.length == 0)return;
                 self.currentModel = models.findIndex(function(m) { return m.id == value; });
-                self.serialUSB.send({ "action": "model", "id": models[self.currentModel].id, "name": models[self.currentModel].name, "image": models[self.currentModel].image });
+                response({ "action": "model", "id": models[self.currentModel].id, "name": models[self.currentModel].name, "image": models[self.currentModel].image });
                 console.log("Model sent to controls: " + models[self.currentModel].id);
             } else if(parameter == "Ir") {
                 const irs = self.getCallbacks["Ir"]();
                 if(!irs || irs.length == 0)return;
                 self.currentIr = irs.findIndex(function(i) { return i.id == value });
-                self.serialUSB.send({ "action": "ir", "id": irs[self.currentIr].id, "name": irs[self.currentIr].name, "image": irs[self.currentIr].image });
+                response({ "action": "ir", "id": irs[self.currentIr].id, "name": irs[self.currentIr].name, "image": irs[self.currentIr].image });
                 console.log("Ir sent to controls: " + irs[self.currentIr].id);
             } else {
-                self.serialUSB.send({ "action": parameter, "value": value });
+                response({ "action": parameter, "value": value });
                 console.log(parameter + " sent to controls: " + value);
             }
-        });
-
-        this.updateParameterQueue = [];
+        } else {
+            response({});
+        }
     }
 
 }
