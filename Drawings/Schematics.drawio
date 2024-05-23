@@ -1,0 +1,86 @@
+<mxfile host="app.diagrams.net" modified="2024-05-23T13:12:00.376Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" etag="5NuGExbGSwv_x2IDgNcJ" version="24.4.6" type="device">
+  <diagram name="Seite-1" id="oXbw1atZnUzc8PFOI6Zb">
+    <mxGraphModel dx="1434" dy="786" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="czVSOMjlaXADzOFfxrpy-1" value="" style="pointerEvents=1;verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.electro-mechanical.loudspeaker;" vertex="1" parent="1">
+          <mxGeometry x="680" y="185" width="25" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-2" value="Power amp" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="180" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-8" value="Right channel" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="czVSOMjlaXADzOFfxrpy-3" target="czVSOMjlaXADzOFfxrpy-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="250" y="292" />
+              <mxPoint x="250" y="210" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-3" value="Line-In" style="verticalLabelPosition=bottom;shadow=0;dashed=0;align=center;html=1;verticalAlign=top;shape=mxgraph.electrical.radio.headphones;pointerEvents=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="264" width="66" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-7" value="Left channel" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="czVSOMjlaXADzOFfxrpy-4" target="czVSOMjlaXADzOFfxrpy-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="250" y="160" />
+              <mxPoint x="250" y="210" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-4" value="Guitar" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="58" y="130" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="czVSOMjlaXADzOFfxrpy-5" target="czVSOMjlaXADzOFfxrpy-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-5" value="Hifiberry DAC+ ADC" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="190" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-6" value="Raspberry PI 4" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="230" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="czVSOMjlaXADzOFfxrpy-2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="690" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-12" value="USB / serial" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="czVSOMjlaXADzOFfxrpy-11" target="czVSOMjlaXADzOFfxrpy-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-11" value="Footswitch (Arduino)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="190" y="490" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-14" value="USB / serial" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="czVSOMjlaXADzOFfxrpy-13" target="czVSOMjlaXADzOFfxrpy-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-13" value="Screen + Knob controls (Arduino mega)" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="490" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-16" value="Bluetooth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="czVSOMjlaXADzOFfxrpy-15" target="czVSOMjlaXADzOFfxrpy-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="580" y="268" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-15" value="Mobile App" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="530" y="490" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="czVSOMjlaXADzOFfxrpy-17" target="czVSOMjlaXADzOFfxrpy-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-17" value="Screen" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="270" y="640" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="czVSOMjlaXADzOFfxrpy-18" target="czVSOMjlaXADzOFfxrpy-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="czVSOMjlaXADzOFfxrpy-18" value="Knobs" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="440" y="640" width="120" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
