@@ -51,7 +51,8 @@ export class RealDataService extends DataService {
     AmpState: 0x001E,
     LSTMState: 0x001F,
     IrState: 0x0020,
-    Record: 0x0021
+    Record: 0x0021,
+    IrWetLevel: 0x0022
   };
 
   listCharacteristics: { [key: string]: number } = {

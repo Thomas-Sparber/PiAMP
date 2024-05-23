@@ -34,8 +34,9 @@ export class DevicePage implements OnInit {
       { id: "Presence", label: "Presence",         value: 50, type: "slider"   },
     ] },
     { name: "Model", parameters: [
-      { id: "Model",    label: "Model",            value: "", type: "dropdown", listValues: this.listValues["Model"] },
-      { id: "Ir",       label: "Impulse response", value: "", type: "dropdown", listValues: this.listValues["Ir"]    },
+      { id: "Model",      label: "Model",            value: "", type: "dropdown", listValues: this.listValues["Model"] },
+      { id: "Ir",         label: "Impulse response", value: "", type: "dropdown", listValues: this.listValues["Ir"]    },
+      { id: "IrWetLevel", label: "Ir Wet level",     value: 1,  type: "slider" },
     ] },
     { name: "FX", parameters: [
       this.delayParameter,
@@ -202,15 +203,19 @@ export class DevicePage implements OnInit {
     const loading = await this.loadingCtrl.create();
     loading.present();
 
-    if(parameter.id == "Model") {
-      await this.loadModelList(false);
-    }
+    try {
+      if(parameter.id == "Model") {
+        await this.loadModelList(false);
+      }
 
-    if(parameter.id == "Ir") {
-      await this.loadIrList(false);
-    }
+      if(parameter.id == "Ir") {
+        await this.loadIrList(false);
+      }
 
-    this.loadParameter(parameter);
+      this.loadParameter(parameter);
+    } catch(e) {
+      console.log("Error refreshing parameter");
+    }
 
     loading.dismiss();
   }
