@@ -125,3 +125,43 @@ Now, as everything is installed you can start it by restarting you pi or running
 Now as everything is up and running you can access the web interface of PiAMP by opening `http://<raspberry-ip-address>:3600/` in your browser.
 
 Alternatively (/additionally) you can of yourse also install the mobile app on your phone by installing `app-debug.apk` on your phone. Please note that is app is not (yet) available from any app store (If PiAMP gets popular I will probably publish it), so you need to manually install it. Please check [online](https://stackoverflow.com/questions/15743391/i-want-to-install-an-unsigned-apk-file-on-my-mobile-what-to-do) how to install unsigned apk files on your phone.
+
+## Some more pictures
+
+Cutting out the aluminium front plate on my snapmaker
+
+![app](https://github.com/Thomas-Sparber/PiAMP/blob/master/pictures/IMG_20240320_095524.jpg)
+
+Opened mounted front plate
+
+![app](https://github.com/Thomas-Sparber/PiAMP/blob/master/pictures/IMG_20240409_095748.jpg)
+
+Back view
+
+![app](https://github.com/Thomas-Sparber/PiAMP/blob/master/pictures/IMG_20240412_102720.jpg)
+
+## Wiring diagrams
+
+### HifiBerry Hat
+
+You probably need to change the jumpers on the hat to enable 12db gain, please check the [datasheet](https://www.hifiberry.com/docs/data-sheets/datasheet-dac-adc/) how to do it
+
+### Raspberry PI to footswitch connection
+
+As already said I used an [USB to TTL adapter](https://www.ebay.at/itm/255323594516?mkcid=16&mkevt=1&mkrid=5221-175123-2357-0&ssspo=kSLcqpXwSAK&sssrc=2047675&ssuid=FjqDye_rTFu&widget_ver=artemis&media=COPY) to connect the Raspberry to the Raspberry Pico (/arduino) of the foot switch. I connected the 5V+ out pin of the TTL adapter to the XLR + pin, the GND of the TTL adapter to the GND pin of the XLR connector and the RX pin of the TTL adapter to the remaining pin. On the other XLR connector I of course connected the same pins to the PI pico to power it and enable data transmission. XLR unforunately only has 3 pins so only one way communication (footswitch --> Raspberry PI) is possible
+
+### Raspberry PI to Arduino (controls) connections
+
+Here I also used the [USB to TTL adapter](https://www.ebay.at/itm/255323594516?mkcid=16&mkevt=1&mkrid=5221-175123-2357-0&ssspo=kSLcqpXwSAK&sssrc=2047675&ssuid=FjqDye_rTFu&widget_ver=artemis&media=COPY) and connectoed TTL GND to arduino GND and TTL RX to arduino TX and TTL TX to arduino RX. This makes two way communication possible.
+
+### Arduino (Controls) wiring diagram
+
+This section describes how to connect the display and the servos to the arduino. Unfortunately it is not yet done. If you want to contribute, please let me know
+
+### Poweroff button
+
+The poweroff button is used to power off the PI to enable a smooth shutdown before power is disconnected. A simple push button needs to be connected to GPIO4 and GND. If the button is pressed, the PI shuts down. 
+
+### Cooling fan(s)
+
+I added some additional old laptop cooling fans to the PI and the power amp to prevent overheating. I think this is more of an optional step.
