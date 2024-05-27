@@ -1,6 +1,6 @@
 # PiAMP
 
-![app](https://github.com/Thomas-Sparber/PiAMP/blob/master/Drawings/logo/logo.png)
+<img src="https://github.com/Thomas-Sparber/PiAMP/blob/master/Drawings/logo/logo.svg" width="400">
 
 PiAMP is a DIY guitar amplifier which uses a neural network to emulate the sound of *any* guitar amplifier or pedal.
 
