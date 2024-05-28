@@ -95,15 +95,16 @@ Copy the config file to its correct folder by running
 
     cp config_neuralpi.json ~/config_files/config_neuralpi.json
 
-Finally, extract the tones, irs and images to its correct folders by running
+Finally, download some tones and Irs (Impule responses = Guitar cabinet emulations) and copy them into the corresponsing folders:
 
-    mkdir -p ~/Documents/GuitarML/NeuralPi
-    tar xf images.tgz
-    mv images ~/Documents/GuitarML/NeuralPi
-    tar xf tones.tgz
-    mv tones ~/Documents/GuitarML/NeuralPi
-    tar xf irs.tgz
-    mv irs ~/Documents/GuitarML/NeuralPi
+    mkdir -p ~/Documents/GuitarML/NeuralPi/tones
+    mkdir -p ~/Documents/GuitarML/NeuralPi/irs
+
+Tones/Models can be found on [GuitarML's home page](https://guitarml.com/tonelibrary/tonelib-pro.html). Both, Proteus and NeuralPi models can be used by PiAMP. Please check out his homepage, he did great things and research. The json files need to be copied into the tones folder on the PI created above
+
+IRs can be found e.g. on [tonehunt](https://tonehunt.org/models?filter=ir). Please note that this webpage is actually for NAM but the IRs work anyways. The wav files need to be copied into the irs folder created above.
+
+If you visit the [tonehunt](https://tonehunt.org/models?filter=ir) website to download IRs you will probably notice that there are MANY great amp models available too! Unfortunately they cannot be used directly. I tried to implement the whole NAM stack into PiAMP (and it also worked), but the CPU usage was too high on the raspberry so it couldn't properly handle them, so it didn't sound good. The good noews is that you can convert NAM models to NeuralPi/Proteus models. Please check out my [other repo](https://github.com/Thomas-Sparber/NAM_to_NeuralPi)
 
 The next command enables the NeuralPi plugin on startup, see [here](https://elk-audio.github.io/elk-docs/html/documents/working_with_elk_board.html#configuring-automatic-startup)
 
