@@ -25,6 +25,11 @@ And here is a picture of the foot switch
 
 ![app](https://github.com/Thomas-Sparber/PiAMP/blob/master/pictures/IMG_20240515_171545.jpg)
 
+And finally, here a video which shows some more details of the PiAMP (and my DIY guitar) and a demo.
+Please excuse me for the poor quality - I simply don't have the patience and skills to make a good video...
+
+https://www.youtube.com/watch?v=HTpMu2ALkGg
+
 ## Disclaimer
 
 This project is open source and everyone is very welcome to build its own PiAMP. Also everyone is very welcome to contribute to this project!
